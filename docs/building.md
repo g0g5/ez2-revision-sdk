@@ -102,15 +102,35 @@ combinations. Other libraries and tools have their own target inventories.
 
 ## SHADERS (OPTIONAL)
 
-The shaders and everything groups require Valve's shadercompile.exe, which is
-not supplied in this repository, its matching engine DLLs alongside it, and a
-native Windows Perl installation (for example Strawberry Perl). Git/MSYS/Cygwin
-Perl is not suitable. Without these dependencies, use game, maptools or tools.
-To build shaders after supplying those tools:
+Install Source SDK Base 2013 Singleplayer (Steam App ID 243730) and Python 3.11
+or later. The shader build uses Valve's shadercompile.exe and the matching DLLs
+in the installed SDK's bin directory. The generator uses the Python standard
+library. Run this command to build EZ2 shaders.
 
 ```powershell
-./build.ps1 -Game EZ2 -Group shaders -CMakeArguments '-DREVISION_SHADERCOMPILE_EXECUTABLE=C:/SDK/bin/shadercompile.exe', '-DREVISION_SHADER_PERL_EXECUTABLE=C:/Strawberry/perl/bin/perl.exe'
+./build.ps1 -Game EZ2 -Group shaders
 ```
+
+The shaders and everything groups resolve the compiler in this order.
+
+1. Use the absolute executable path supplied through the CMake cache variable
+   REVISION_SHADERCOMPILE_EXECUTABLE.
+2. Use the absolute SDK bin directory supplied through REVISION_SHADER_SDK_BIN
+   in .shader.env.local at the repository root. This file is ignored by Git.
+3. Look up Steam App ID 243730 in the Windows uninstall registry and then in
+   the Steam library manifests. This uses read-only access as a regular
+   Windows user and works with Steam closed.
+
+For an SDK in D:/SteamLibrary, .shader.env.local looks like this.
+
+```dotenv
+REVISION_SHADER_SDK_BIN=D:/SteamLibrary/steamapps/common/Source SDK Base 2013 Singleplayer/bin
+```
+
+Set the interpreter with -DPython3_EXECUTABLE=<absolute path> in
+-CMakeArguments when needed. To clear a compiler path saved by an older build,
+pass '-UREVISION_SHADERCOMPILE_EXECUTABLE' once in -CMakeArguments. Python and
+the SDK compiler are required only when configuring shaders or everything.
 
 Shader DLLs go to the selected mod's bin directory and shader bytecode to its
 shaders/fxc directory. Shader intermediates remain in the build tree. The

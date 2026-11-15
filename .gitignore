@@ -52,6 +52,7 @@ sp/game/bin
 config.cfg
 
 # shader files
+/.shader.env.local
 *.tmp
 *.vcs
 sp/game/mod_*/bin/game_shader_dx9.*

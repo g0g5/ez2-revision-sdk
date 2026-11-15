@@ -3,7 +3,7 @@ Revision SDK is the Source SDK 2013 Singleplayer branch behind the Entropy: Zero
 
 ## Tech Stack
 
-- Language: C++ (Source Engine 2013 style, pre-C++11 idiom), HLSL and Valve `SDK_` shaders, PowerShell and Perl build helpers
+- Language: C++ (Source Engine 2013 style, pre-C++11 idiom), HLSL and Valve `SDK_` shaders, PowerShell and Python build helpers
 - Runtime / Framework: Source Engine 2013 singleplayer (`client.dll`, `server.dll`, VGUI2, VScript/Squirrel)
 - Key Dependencies: Steamworks SDK (`sp/src/lib/public/steam_api.lib`, prebuilt), vendored protobuf 2.3.0, vendored Squirrel, Discord RPC
 - Package Manager: none; native CMake + Ninja, Windows MSVC x86 (VS 2022/2026 Desktop C++ and CMake tools), PowerShell 7
@@ -72,7 +72,7 @@ Run from the repository root with PowerShell 7. `build.ps1` finds VS and its bun
 - Keep x86: the engine ABI and vendored libraries are 32-bit. Static SDK libraries are rebuilt in the build tree, not over the vendored `.lib` files.
 - `phonemeextractor` and `qc_eyes` require obsolete toolsets/MFC and are not build targets. GamepadUI implementation is external; this repository builds only its existing game hooks.
 - `REVISION_BUILD_EXPANDED_STEAM` defaults to `OFF`; rebuilding needs matching updated Steamworks headers, `REVISION_STEAMWORKS_VERSION`, and the engine-side `bin/steam_api.dll`. See `README_EXPANDED_STEAM.md`.
-- `-Group shaders` / `everything` needs external Valve `shadercompile.exe` with its runtime DLLs and native Windows Perl. See `cmake/Shaders.cmake` and `docs/building.md` for cache paths.
+- `-Group shaders` / `everything` needs Python 3.11+ and Valve `shadercompile.exe` with its runtime DLLs from Source SDK Base 2013 Singleplayer. See `docs/building.md` for automatic discovery and manual overrides.
 - Mod-specific code is isolated by preprocessor macros (`EZ`, `EZ1`, `EZ2`, `MAPBASE`); keep stock `hl2/` and `episodic/` paths intact when touching shared files.
 - This is a derivative of Source SDK 2013 / Mapbase v8.0. `LICENSE` allows free redistribution only and requires shipping `thirdpartylegalnotices.txt`; do not introduce GPL-like copyleft code.
 

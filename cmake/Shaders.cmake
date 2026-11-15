@@ -6,9 +6,8 @@ include_guard(GLOBAL)
 #
 # Inputs: absolute REVISION_SRC / REVISION_ROOT, revision_target_defaults(target),
 # revision_link_libraries(target ...). Sources and dependencies are explicit.
-# Cache inputs: REVISION_SHADERCOMPILE_EXECUTABLE, REVISION_SHADER_PERL_EXECUTABLE.
-# Native Windows Perl is required: Git/MSYS/Cygwin Perl rewrites Valve's Windows
-# paths while fxc_prep.pl runs. shadercompile.exe needs its matching DLLs beside it.
+# Cache inputs: REVISION_SHADERCOMPILE_EXECUTABLE, Python3_EXECUTABLE.
+# shadercompile.exe needs its matching SDK DLLs beside it.
 #
 # Targets: shaders (aggregate), shaders_<game>, game_shader_dx9_<game>,
 # revision_shader_headers, revision_shader_bytecode (shared by all games).
@@ -16,7 +15,10 @@ include_guard(GLOBAL)
 # EZ1/EZ2 use the same Mapbase material DLL and bytecode, just a different output
 # directory; only HL2 and EPISODIC have stdshader outputs in this repository.
 
-function(_revision_shader_tools)
+function(_revision_shader_pipeline game_dir)
+    if(TARGET revision_shader_bytecode)
+        return()
+    endif()
     if(NOT WIN32 OR NOT MSVC OR NOT CMAKE_SIZEOF_VOID_P EQUAL 4)
         message(FATAL_ERROR "Revision shaders require Windows MSVC x86 (32-bit).")
     endif()
@@ -26,103 +28,50 @@ function(_revision_shader_tools)
         endif()
     endforeach()
 
-    set(REVISION_SHADERCOMPILE_EXECUTABLE "" CACHE FILEPATH
-        "Valve shadercompile.exe from Source SDK Base 2013 Singleplayer/bin")
-    if(NOT REVISION_SHADERCOMPILE_EXECUTABLE)
-        find_program(_revision_shadercompile NAMES shadercompile.exe
-            HINTS "$ENV{SDKBINDIR}")
-        if(_revision_shadercompile)
-            set(REVISION_SHADERCOMPILE_EXECUTABLE "${_revision_shadercompile}"
-                CACHE FILEPATH "Valve shadercompile.exe" FORCE)
-        endif()
-    endif()
-    if(NOT EXISTS "${REVISION_SHADERCOMPILE_EXECUTABLE}" OR
-            IS_DIRECTORY "${REVISION_SHADERCOMPILE_EXECUTABLE}")
-        message(FATAL_ERROR
-            "The shaders/everything selection requires Valve shadercompile.exe, "
-            "which is NOT shipped in this repository. Set "
-            "-DREVISION_SHADERCOMPILE_EXECUTABLE=C:/path/to/SDK/bin/shadercompile.exe "
-            "and keep its matching engine DLLs beside it.")
-    endif()
-    get_filename_component(_bin "${REVISION_SHADERCOMPILE_EXECUTABLE}" DIRECTORY)
-    foreach(_dll IN ITEMS shadercompile_dll.dll tier0.dll vstdlib.dll)
-        if(NOT EXISTS "${_bin}/${_dll}")
-            message(FATAL_ERROR
-                "Shader compiler runtime is incomplete: ${_bin}/${_dll} is missing. "
-                "Use the matching Source SDK Base 2013 Singleplayer bin directory.")
-        endif()
-    endforeach()
-
-    set(REVISION_SHADER_PERL_EXECUTABLE "" CACHE FILEPATH
-        "Native Windows Perl used to generate shader combo headers and worklists")
-    if(NOT REVISION_SHADER_PERL_EXECUTABLE)
-        if(PERL_EXECUTABLE)
-            set(_perl "${PERL_EXECUTABLE}")
-        else()
-            find_program(_revision_shader_perl NAMES perl.exe perl)
-            set(_perl "${_revision_shader_perl}")
-        endif()
-        if(_perl)
-            set(REVISION_SHADER_PERL_EXECUTABLE "${_perl}" CACHE FILEPATH
-                "Windows-compatible Perl for shaders" FORCE)
-        endif()
-    endif()
-    if(NOT EXISTS "${REVISION_SHADER_PERL_EXECUTABLE}" OR
-            IS_DIRECTORY "${REVISION_SHADER_PERL_EXECUTABLE}")
-        message(FATAL_ERROR
-            "The shaders/everything selection requires Perl. Set "
-            "-DREVISION_SHADER_PERL_EXECUTABLE=C:/path/to/perl.exe "
-            "to native Windows Perl (for example Strawberry Perl).")
-    endif()
-    execute_process(COMMAND "${REVISION_SHADER_PERL_EXECUTABLE}" -e "print $^O"
-        RESULT_VARIABLE _result OUTPUT_VARIABLE _os ERROR_VARIABLE _error)
-    if(NOT _result EQUAL 0 OR NOT _os STREQUAL "MSWin32")
-        message(FATAL_ERROR
-            "Shaders need native Windows Perl (MSWin32), not Git/MSYS/Cygwin Perl. "
-            "REVISION_SHADER_PERL_EXECUTABLE=${REVISION_SHADER_PERL_EXECUTABLE}; "
-            "reported platform '${_os}'; ${_error}")
-    endif()
-    # fxc_prep.pl does not need String::CRC32; the historical checksum and ASM
-    # paths are not part of this pipeline.
-    execute_process(COMMAND "${REVISION_SHADER_PERL_EXECUTABLE}" -c
-            "${REVISION_SRC}/devtools/bin/fxc_prep.pl"
-        RESULT_VARIABLE _result OUTPUT_VARIABLE _out ERROR_VARIABLE _error)
-    if(NOT _result EQUAL 0)
-        message(FATAL_ERROR "Shader Perl prerequisites failed: ${_out}${_error}")
-    endif()
-endfunction()
-
-function(_revision_shader_pipeline game_dir)
-    if(TARGET revision_shader_bytecode)
-        return()
-    endif()
-    _revision_shader_tools()
+    find_package(Python3 3.11 REQUIRED COMPONENTS Interpreter)
     set(_shader_dir "${REVISION_SRC}/materialsystem/stdshaders")
     set(_helper_dir "${CMAKE_CURRENT_FUNCTION_LIST_DIR}")
     set(_base "${CMAKE_CURRENT_BINARY_DIR}/revision-shaders")
+    set(_finder "${_helper_dir}/FindShaderCompiler.py")
+    set(_prep "${_helper_dir}/ShaderPrep.py")
+    set(_runner "${_helper_dir}/RunShaderBuild.cmake")
+    set(_local_config "${REVISION_ROOT}/.shader.env.local")
+    # Reconfigure when the local override is created, edited, or removed.
+    file(GLOB _local_config_entry CONFIGURE_DEPENDS "${_local_config}")
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+        "${_finder}" "${_prep}" ${_local_config_entry})
+    set(REVISION_SHADERCOMPILE_EXECUTABLE "" CACHE FILEPATH
+        "Optional override for the detected Valve shadercompile.exe")
+    set(_sdk_dlls shadercompile_dll.dll tier0.dll vstdlib.dll filesystem_stdio.dll mysql_wrapper.dll)
+    execute_process(COMMAND "${Python3_EXECUTABLE}" "${_finder}"
+            --config "${_local_config}" "--compiler=${REVISION_SHADERCOMPILE_EXECUTABLE}"
+            --required-dlls ${_sdk_dlls}
+        RESULT_VARIABLE _result OUTPUT_VARIABLE _compiler ERROR_VARIABLE _origin
+        OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_STRIP_TRAILING_WHITESPACE ENCODING UTF-8)
+    if(NOT _result STREQUAL "0")
+        message(FATAL_ERROR "Shader compiler discovery failed (${_result}).\n${_origin}")
+    endif()
+    message(STATUS "Valve shader compiler: ${_compiler} (${_origin})")
+    get_filename_component(_compiler_dir "${_compiler}" DIRECTORY)
+    set(_sdk_runtime ${_sdk_dlls})
+    list(TRANSFORM _sdk_runtime PREPEND "${_compiler_dir}/")
+
     # Broad input dependencies intentionally include all quoted HLSL includes,
     # including inactive preprocessor branches. New/removed files reconfigure.
     file(GLOB _inputs CONFIGURE_DEPENDS
         "${_shader_dir}/*.fxc" "${_shader_dir}/*.h"
         "${_shader_dir}/*.vsh" "${_shader_dir}/*.psh")
-    set(_scripts "${_helper_dir}/ShaderPrep.pl" "${_helper_dir}/RunShaderBuild.cmake"
-        "${REVISION_SRC}/devtools/bin/fxc_prep.pl"
-        "${REVISION_SRC}/devtools/bin/valve_perl_helpers.pl")
     set(_all_headers)
     set(_all_vcs)
     set(_all_stamps)
     foreach(_model IN ITEMS 20b 30)
         set(_project "stdshader_dx9_${_model}")
         set(_list "${_shader_dir}/${_project}.txt")
-        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_list}" ${_scripts})
-        # Use Valve's expansion rules, rather than maintaining a second parser:
-        # ps2x -> ps20+ps20b, vsxx -> vs11+vs20, and forced ps/vs30.
-        execute_process(COMMAND "${REVISION_SHADER_PERL_EXECUTABLE}"
-                "${_helper_dir}/ShaderPrep.pl" list "${REVISION_SRC}" "${_project}" "${_model}"
-            WORKING_DIRECTORY "${_shader_dir}" RESULT_VARIABLE _result
-            OUTPUT_VARIABLE _expanded ERROR_VARIABLE _error)
-        if(NOT _result EQUAL 0)
-            message(FATAL_ERROR "Cannot expand ${_list}: ${_error}")
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_list}")
+        execute_process(COMMAND "${Python3_EXECUTABLE}" "${_prep}" list "${_list}" "${_model}"
+            RESULT_VARIABLE _result OUTPUT_VARIABLE _expanded ERROR_VARIABLE _error)
+        if(NOT _result STREQUAL "0")
+            message(FATAL_ERROR "Cannot expand ${_list} (${_result}): ${_error}")
         endif()
         string(REPLACE "\r" "" _expanded "${_expanded}")
         string(STRIP "${_expanded}" _expanded)
@@ -141,7 +90,7 @@ function(_revision_shader_pipeline game_dir)
             list(APPEND _vcs "${_work}/shaders/fxc/${_name}.vcs")
         endforeach()
         if(_model STREQUAL "30")
-            set(_proxy "${REVISION_SRC}/dx10sdk/utilities/dx9_30/dx_proxy.dll")
+            set(_proxy "${REVISION_SRC}/dx10sdk/Utilities/dx9_30/dx_proxy.dll")
             set(_dx_version pc09.30)
             set(_dx_dll "${REVISION_SRC}/devtools/bin/d3dx9_33.dll")
         else()
@@ -149,10 +98,7 @@ function(_revision_shader_pipeline game_dir)
             set(_dx_version pc09.00)
             set(_dx_dll "")
         endif()
-        get_filename_component(_compiler_dir "${REVISION_SHADERCOMPILE_EXECUTABLE}" DIRECTORY)
-        set(_runtime "${REVISION_SHADERCOMPILE_EXECUTABLE}"
-            "${_compiler_dir}/shadercompile_dll.dll" "${_compiler_dir}/tier0.dll"
-            "${_compiler_dir}/vstdlib.dll" "${_proxy}")
+        set(_runtime "${_compiler}" ${_sdk_runtime} "${_proxy}")
         if(_dx_dll)
             list(APPEND _runtime "${_dx_dll}")
         endif()
@@ -164,8 +110,7 @@ function(_revision_shader_pipeline game_dir)
         set(_manifest "${_base}/${_project}.cmake")
         # Bracket quoting keeps Windows paths, spaces and semicolon lists intact.
         set(_content "")
-        foreach(_var IN ITEMS REVISION_SRC REVISION_SHADER_PERL_EXECUTABLE
-                REVISION_SHADERCOMPILE_EXECUTABLE _shader_dir _project _model
+        foreach(_var IN ITEMS Python3_EXECUTABLE _prep _compiler _list _model
                 _inputs _names _runtime _dx_version game_dir)
             string(APPEND _content "set(${_var} [==[${${_var}}]==])\n")
         endforeach()
@@ -174,17 +119,16 @@ function(_revision_shader_pipeline game_dir)
         add_custom_command(OUTPUT "${_stamp}" ${_headers}
             BYPRODUCTS "${_work}/filelist.txt" "${_work}/uniquefilestocopy.txt"
             COMMAND "${CMAKE_COMMAND}" "-DMANIFEST=${_manifest}" "-DWORK_DIR=${_work}"
-                -DMODE=PREPARE -P "${_helper_dir}/RunShaderBuild.cmake"
-            DEPENDS ${_inputs} "${_list}" ${_scripts} "${_manifest}" ${_runtime}
+                -DMODE=PREPARE -P "${_runner}"
+            DEPENDS ${_inputs} "${_list}" "${_prep}" "${_runner}" "${_manifest}"
             COMMENT "Generate shader combo headers and ${_model} worklist"
             VERBATIM)
         add_custom_command(OUTPUT ${_vcs}
             COMMAND "${CMAKE_COMMAND}" "-DMANIFEST=${_manifest}" "-DWORK_DIR=${_work}"
-                -DMODE=COMPILE -P "${_helper_dir}/RunShaderBuild.cmake"
-            # The Valve compiler can use shared scratch space in its bin
-            # directory. Serialize model 30 after 20b; prep stages remain parallel.
+                -DMODE=COMPILE -P "${_runner}"
+            # Each Valve invocation uses the available cores. Run models in sequence.
             DEPENDS "${_stamp}" ${_headers} ${_runtime} "${game_dir}/gameinfo.txt"
-                ${_all_vcs} "${_manifest}" "${_helper_dir}/RunShaderBuild.cmake"
+                ${_all_vcs} "${_manifest}" "${_runner}"
             COMMENT "Compile Valve shader bytecode (model ${_model})"
             VERBATIM)
         list(APPEND _all_stamps "${_stamp}")
