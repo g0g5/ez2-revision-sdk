@@ -6,7 +6,7 @@ Requirements:
 - Windows and PowerShell 7 (pwsh).
 - Visual Studio 2022 or 2026, with Desktop development with C++, the MSVC x86/x64
   tools, a Windows SDK, and C++ CMake tools for Windows (bundled CMake and Ninja).
-- The engine and the vendored SDK libraries use the Windows x86 (32-bit) ABI.
+- The engine and its prebuilt SDK libraries use the Windows x86 (32-bit) ABI.
   Keep this ABI even on 64-bit Windows; x64 game binaries are not compatible.
 
 Run from the repository root in PowerShell 7:
@@ -61,6 +61,10 @@ changes are limited to the current process and restored when the script exits.
 - REVISION_BUILD_EXPANDED_STEAM: rebuild Expanded Steam from source, default OFF.
 - REVISION_STEAMWORKS_VERSION: integer Steamworks header version, default 1261.
   See README_EXPANDED_STEAM.md before changing Steamworks headers or libraries.
+- REVISION_DOWNLOAD_SDK_LIBRARIES: download missing Windows x86 SDK libraries,
+  default ON.
+- REVISION_SDK_LIBRARY_CACHE: cache shared by build trees in this checkout.
+  Defaults to `build/sdk-libraries`.
 
 For example, to pass a game list directly as a CMake cache argument:
 
@@ -69,15 +73,22 @@ For example, to pass a game list directly as a CMake cache argument:
 ```
 
 Prefer -Game when selecting games so the default build directory matches the
-selection. Keep distinct build trees for different configurations. Game outputs
-are written to sp/game/mod_<game>/bin (lowercase game name, for example
-sp/game/mod_ez2/bin); tools go to sp/game/bin. Intermediates, generated build
-files and static libraries stay under the build directory. Different
-configurations share runtime output directories: a later build replaces those
-binaries. To install an E:Z mod, copy its complete mod directory, including the
-built bin files and required game content, to Steam/SteamApps/sourcemods. The EZ2
-content directory is not included here; building its DLLs does not install the
-mod's assets.
+selection. Keep distinct build trees for different configurations. Game DLLs,
+tools and their linker PDBs are linked into the selected build tree. Each
+requested build publishes the selected binaries and PDBs to `sp/game/bin` for
+tools or `sp/game/mod_<game>/bin` for game DLLs, even when Ninja can reuse the
+linked files. To install an E:Z mod, copy its complete mod directory, including
+the published bin files and required game content, to Steam/SteamApps/sourcemods.
+The EZ2 content directory must be supplied separately.
+
+### Windows x86 SDK libraries
+
+CMake uses libraries supplied under `sp/src/lib/public` and `sp/src/lib/common`.
+On a clean checkout, the first configure downloads the missing libraries from
+[Entropy Zero's pinned Source SDK revision](https://github.com/entropy-zero/source-sdk-2013/tree/4c4fea9c4f8657bd66f964570e11a1714389bc77/sp/src/lib)
+and verifies each SHA-256 before caching it. For an offline build, reuse a
+populated cache or supply the matching x86 libraries in those source
+directories. Set `REVISION_DOWNLOAD_SDK_LIBRARIES=OFF` to disable downloads.
 
 ## SOURCE LIST MAINTENANCE
 
@@ -104,15 +115,12 @@ To build shaders after supplying those tools:
 Shader DLLs go to the selected mod's bin directory and shader bytecode to its
 shaders/fxc directory. Shader intermediates remain in the build tree. The
 stdshader_dx9_*.txt files are checked-in inputs; update them when adding or
-removing shader combinations. Shader compilation is not part of the default CI.
+removing shader combinations.
 
-## VALIDATION AND CI
+## VALIDATION
 
-The Windows CMake + Ninja workflow requests Release and Debug builds for EZ2,
-EZ1, HL2 and EPISODIC, plus tools in Release. Release builds for all four games,
-an EZ2 Debug build, and the tools/maptools groups have been verified locally on
-VS 2026. The remaining Debug combinations are part of the CI matrix, which
-describes intended coverage. Compilation does not replace in-game runtime testing.
+Build the affected targets in Debug and Release. Run the mod under
+`steamapps/sourcemods` to verify gameplay changes.
 
 GamepadUI is not part of this repository's build: only the existing game hooks
 are compiled. Bring your own implementation and CMake target if you need that

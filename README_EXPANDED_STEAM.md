@@ -85,7 +85,7 @@ Updated Steamworks headers may be subject to the Steamworks SDK Access Agreement
 
 The root CMake cache controls the integration:
 
-- `REVISION_BUILD_EXPANDED_STEAM=OFF` (default) uses the vendored `sp/src/lib/public/expanded_steam.lib` when linking the game client. Set it to `ON` to build Expanded Steam from source with your matching Steamworks headers.
+- `REVISION_BUILD_EXPANDED_STEAM=OFF` (default) links the prebuilt `expanded_steam.lib` into the game client. CMake uses a local library at `sp/src/lib/public/expanded_steam.lib` if supplied. For the default Steamworks version it can also retrieve the pinned library described in the [build guide](docs/building.md#windows-x86-sdk-libraries). Set the option to `ON` to build Expanded Steam from source with matching Steamworks headers.
 - `REVISION_STEAMWORKS_VERSION=1261` (default) is the integer header-version selector used by the source. Set it to the version expected by the headers you provide; changing this number does not download or update any SDK files.
 
 Run in PowerShell 7 from the repository root, after preparing the matching SDK files:
@@ -108,7 +108,7 @@ That should be everything you need to do in order to add Expanded Steam to your 
 
 ### Can I leave Expanded Steam in my code even if I don't currently have an upgraded Steam API?
 
-Not with mismatched headers, import libraries and runtime DLLs. The updated Steam API import library requires a compatible runtime `steam_api.dll`. `REVISION_BUILD_EXPANDED_STEAM=OFF` only skips rebuilding Expanded Steam; the game client still links its vendored library. Keep the complete Steamworks integration consistent and test it in your app.
+The updated Steam API import library requires a compatible runtime `steam_api.dll`. With `REVISION_BUILD_EXPANDED_STEAM=OFF`, the game client links the prebuilt Expanded Steam library. Keep the headers, import libraries and runtime DLLs compatible and test the integration in your app.
 
 ### Does this support [Gamepad UI?](https://github.com/Joshua-Ashton/HL2-GamepadUI)
 

@@ -1,6 +1,7 @@
 include_guard(GLOBAL)
+include("${CMAKE_CURRENT_LIST_DIR}/SDKLibraries.cmake")
 
-# Source-built SDK libraries take precedence over the vendored engine import libraries.
+# Rebuilt SDK targets take precedence over local and cached prebuilt libraries.
 function(revision_link_libraries target)
     foreach(lib IN LISTS ARGN)
         if(TARGET "${lib}")
@@ -9,6 +10,9 @@ function(revision_link_libraries target)
             target_link_libraries(${target} PRIVATE "${REVISION_SRC}/lib/public/${lib}.lib")
         elseif(EXISTS "${REVISION_SRC}/lib/common/${lib}.lib")
             target_link_libraries(${target} PRIVATE "${REVISION_SRC}/lib/common/${lib}.lib")
+        elseif(DEFINED revision_prebuilt_${lib})
+            revision_fetch_sdk_library("${lib}" library)
+            target_link_libraries(${target} PRIVATE "${library}")
         else()
             target_link_libraries(${target} PRIVATE "${lib}.lib")
         endif()
@@ -38,21 +42,26 @@ function(revision_target_defaults target)
         target_link_options(${target} PRIVATE /DEBUG /SAFESEH:NO /INCREMENTAL:NO
             /NODEFAULTLIB:libc /NODEFAULTLIB:libcd
             "$<IF:$<CONFIG:Debug>,/NODEFAULTLIB:libcmt,/NODEFAULTLIB:libcmtd>"
-            "$<$<CONFIG:Release>:/OPT:REF;/OPT:ICF>")
-        # Runtime DLLs and their linker PDBs stay together, as in the SDK output layout.
+            "$<$<CONFIG:Release>:/OPT:REF;/OPT:NOICF>")
+    endif()
+    if(ARGV1 STREQUAL "COPY_PDB")
         add_custom_command(TARGET ${target} POST_BUILD
             COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_PDB_FILE:${target}>" "$<TARGET_FILE_DIR:${target}>"
             VERBATIM)
     endif()
 endfunction()
 
-function(revision_add_target target type)
+function(revision_add_target name type)
+    set(target "${name}")
+    if(ARGC GREATER 2)
+        set(target "${ARGV2}")
+    endif()
     set(revision_sources)
     set(revision_definitions)
     set(revision_includes)
     set(revision_libraries)
     set(revision_no_pch)
-    include("${REVISION_ROOT}/cmake/targets/${target}.cmake")
+    include("${REVISION_ROOT}/cmake/targets/${name}.cmake")
     if(type STREQUAL "EXECUTABLE")
         add_executable(${target} EXCLUDE_FROM_ALL ${revision_sources})
     else()
@@ -79,4 +88,35 @@ function(revision_add_target target type)
     endif()
     revision_target_defaults(${target})
     revision_link_libraries(${target} ${revision_libraries})
+endfunction()
+
+function(revision_add_runtime_target name type destination)
+    cmake_parse_arguments(PARSE_ARGV 3 runtime "" "OUTPUT_NAME" "")
+    if(NOT DEFINED runtime_OUTPUT_NAME)
+        set(runtime_OUTPUT_NAME "${name}")
+    endif()
+    set(binary "${name}_binary")
+    set(staging "${CMAKE_CURRENT_BINARY_DIR}/bin/${name}")
+    revision_add_target(${name} ${type} ${binary})
+    set_target_properties(${binary} PROPERTIES
+        OUTPUT_NAME "${runtime_OUTPUT_NAME}"
+        ARCHIVE_OUTPUT_NAME "${name}"
+        DEFINE_SYMBOL "${name}_EXPORTS"
+        RUNTIME_OUTPUT_DIRECTORY "${staging}"
+        PDB_OUTPUT_DIRECTORY "${staging}"
+        PDB_NAME "${runtime_OUTPUT_NAME}")
+    # Declare the linker's PDB so Ninja can regenerate it if it is missing.
+    add_custom_command(TARGET ${binary} POST_BUILD
+        BYPRODUCTS "${staging}/${runtime_OUTPUT_NAME}.pdb"
+        COMMAND "${CMAKE_COMMAND}" -E true
+        VERBATIM)
+    # Each requested build publishes its artifacts, including an incremental no-op link.
+    add_custom_target(${name}
+        COMMAND "${CMAKE_COMMAND}"
+            "-DBINARY=$<TARGET_FILE:${binary}>" "-DPDB=$<TARGET_PDB_FILE:${binary}>"
+            "-DDESTINATION=${destination}" "-DLOCK=${REVISION_ROOT}/build/publish-locks/${name}.lock"
+            -P "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/PublishRuntime.cmake"
+        DEPENDS ${binary}
+        COMMENT "Publish ${name} (${CMAKE_BUILD_TYPE})"
+        VERBATIM)
 endfunction()

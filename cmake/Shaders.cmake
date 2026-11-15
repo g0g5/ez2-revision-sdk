@@ -239,7 +239,7 @@ function(revision_add_shaders game)
     set(_target game_shader_dx9_${_game})
     add_library(${_target} SHARED EXCLUDE_FROM_ALL ${_sources}
         "${REVISION_SRC}/public/tier0/memoverride.cpp")
-    revision_target_defaults(${_target})
+    revision_target_defaults(${_target} COPY_PDB)
     target_include_directories(${_target} BEFORE PRIVATE
         "${_base}/$<CONFIG>/20b/fxctmp9" "${_base}/$<CONFIG>/30/fxctmp9"
         "${_shader_dir}" "${_shader_dir}/fxctmp9" "${_shader_dir}/vshtmp9")
