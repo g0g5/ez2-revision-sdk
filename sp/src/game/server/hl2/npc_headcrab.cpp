@@ -2528,6 +2528,7 @@ void CBaseHeadcrab::InputDropFromCeiling( inputdata_t &inputdata )
 bool CBaseHeadcrab::FindTeleport( const Vector &origin, CBaseEntity *pEntity, int iHull, float distance, bool excludeNear )
 {
 	CAI_Hint *pHint = NULL;
+#ifdef EZ2
 	if (pEntity == this)
 	{
 		// Attempt to find a teleporting point
@@ -2545,6 +2546,7 @@ bool CBaseHeadcrab::FindTeleport( const Vector &origin, CBaseEntity *pEntity, in
 
 		pHint = CAI_HintManager::FindHint( this, hintCriteria );
 	}
+#endif
 
 	Vector vHintPos = vec3_invalid;
 	QAngle vHintAngles = pEntity->GetAbsAngles();

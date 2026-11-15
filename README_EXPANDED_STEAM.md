@@ -11,7 +11,7 @@ Currently, directly upgrading the Steam API requires replacing `steam_api.dll` i
 
 This project comes with an optional hack which uses DLL redirection to force the client/server DLLs to integrate a `steam_api.dll` adjacent to them in the mod's own `bin` folder rather than the engine's `bin` folder. However, this sometimes conflicts with the Steam API implemented by the rest of the engine and modules like Steam Input may not work correctly. There's also not an equivalent solution for native Linux.
 
-The instructions below will assume you are integrating this into a standalone Steam app.
+The instructions below assume a standalone Steam app on Windows. Build from the repository root with PowerShell 7 and `./build.ps1`; see [README](README) for the Windows x86 toolchain requirements. The default build is EZ2 Release. `REVISION_BUILD_EXPANDED_STEAM` defaults to `OFF` (use the vendored library rather than rebuilding it), and `REVISION_STEAMWORKS_VERSION` defaults to `1261`.
 
 ---
 
@@ -21,15 +21,9 @@ Follow these instructions if you just want to integrate Steam Input and Steam De
 
 ### Updating steam_api.dll
 
-First, you must download the latest version of the Steamworks SDK. Assuming you are a Steamworks partner, this will be available through the partner.steamgames.com dashboard.
+First, obtain the Steamworks SDK version matching the headers and import library your build uses. Assuming you are a Steamworks partner, this will be available through the partner.steamgames.com dashboard.
 
 In the downloaded zip file, go to `redistributable_bin` and extract `steam_api.dll`. Move this file to your app's engine bin folder (i.e. `steamapps/common/my_steam_mod/bin`) and replace the existing `steam_api.dll`.
-
-If you are developing a Linux port, return to the downloaded zip file and go to `redistributable_bin/linux32`. Extract `libsteam_api.so` and move it to your app's Linux engine bin folder, replacing the existing `libsteam_api.so`.
-
-#### Using the DLL redirection hack
-
-If you cannot replace the engine's `steam_api.dll`, extract it to your mod's `bin` folder instead. After merging the code (which comes later), go to `steamworks_update.vpc` and enable the `STEAM_API_MOD_HACK` conditional. This will build the server and client DLLs with the required DLL redirection.
 
 ### Integrating Steam Input
 
@@ -83,15 +77,26 @@ Follow these instructions if you want to modify Expanded Steam's source code. Th
 
 ### Updating Steam API headers
 
-Open the zip file for the latest version of the Steamworks SDK. Go to `public/steam` and extract all of the `.h` files (`steam_api.json` and the `lib` folder are unnecessary). Then, move these files to your codebase's `src/public/steam` folder, replacing all of the existing headers.
+Use Steamworks headers, the x86 `steam_api.lib` import library, and the x86 runtime `steam_api.dll` from a matching SDK version. Headers go in `sp/src/public/steam`; the import library goes in `sp/src/lib/public`. The runtime DLL belongs in your app's engine `bin` directory as described above. Keep these components compatible with the Expanded Steam sources and library you build or use.
 
-Expanded Steam already comes with the v1.55 version of `steam_api.lib` and its Linux counterpart, so that is all you will need from the SDK. We don't include these headers because that would be in violation of the Steamworks SDK Access Agreement. **You are advised to avoid committing these files as well if you plan to share your fork of the code.**
+Updated Steamworks headers may be subject to the Steamworks SDK Access Agreement. **Avoid committing restricted SDK files when sharing your fork.**
 
-### Editing the VPCs
+### Building with CMake
 
-In your codebase, go to `vpc_scripts` and open `default.vgc`. There should be a conditional called `BUILD_EXPANDED_STEAM`. Turn it on to add Expanded Steam to your solution/makefile.
+The root CMake cache controls the integration:
 
-Then, open `steamworks_update.vpc`. There should be a macro called `STEAMWORKS_VERSION` near the top. This should be changed to match the version of the Steamworks SDK you're using. More information can be found within that file.
+- `REVISION_BUILD_EXPANDED_STEAM=OFF` (default) uses the vendored `sp/src/lib/public/expanded_steam.lib` when linking the game client. Set it to `ON` to build Expanded Steam from source with your matching Steamworks headers.
+- `REVISION_STEAMWORKS_VERSION=1261` (default) is the integer header-version selector used by the source. Set it to the version expected by the headers you provide; changing this number does not download or update any SDK files.
+
+Run in PowerShell 7 from the repository root, after preparing the matching SDK files:
+
+```powershell
+./build.ps1 -Game EZ2 -Configuration Release -CMakeArguments '-DREVISION_BUILD_EXPANDED_STEAM=ON', '-DREVISION_STEAMWORKS_VERSION=1261'
+```
+
+Use `-Game EZ2,EZ1` or `-Game All` to select multiple games. Runtime game DLLs are placed in `sp/game/mod_<game>/bin`; rebuilt static libraries and intermediate files stay in the build directory. The native Expanded Steam source inventory is `cmake/targets/expanded_steam.cmake`; update it when adding or removing sources.
+
+The default configuration with the vendored library has been built for EZ2 Release and Debug. Rebuilding Expanded Steam from source with a different SDK requires its own build and runtime validation.
 
 ---
 
@@ -103,7 +108,7 @@ That should be everything you need to do in order to add Expanded Steam to your 
 
 ### Can I leave Expanded Steam in my code even if I don't currently have an upgraded Steam API?
 
-Not really. This code comes with an updated `steam_api.lib`, which will crash if it attempts to link with an older DLL. You can fix this by just going to `src/lib/public` and replacing `steam_api.lib` with the stock Source 2013 version, but this will stop Expanded Steam from compiling and you will need to remove its library link in `client_base.vpc`.
+Not with mismatched headers, import libraries and runtime DLLs. The updated Steam API import library requires a compatible runtime `steam_api.dll`. `REVISION_BUILD_EXPANDED_STEAM=OFF` only skips rebuilding Expanded Steam; the game client still links its vendored library. Keep the complete Steamworks integration consistent and test it in your app.
 
 ### Does this support [Gamepad UI?](https://github.com/Joshua-Ashton/HL2-GamepadUI)
 

@@ -780,6 +780,7 @@ void CFailableAchievement::SetFailed()
 	}	
 }
 
+#ifdef EZ
 #define PLAYER_SQUADNAME "player_squad"
 
 //-----------------------------------------------------------------------------
@@ -852,6 +853,7 @@ void CSquadAchievement::SetSquadFilter( const char *pClassName )
 {
 	m_pSquadClassNameFilter = pClassName;
 }
+#endif
 
 //===========================================
 

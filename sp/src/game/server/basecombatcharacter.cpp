@@ -1710,7 +1710,7 @@ CBaseEntity *CBaseCombatCharacter::BecomeRagdollBoogie( CBaseEntity *pKiller, co
 }
 #endif
 
-#ifdef EZ
+#ifdef EZ2
 bool CBaseCombatCharacter::TestRagdollPin( const Vector &vecOrigin, const Vector &vecDirection )
 {
 	// Temporal variants cannot be pinned because their bodies fade out
@@ -1742,6 +1742,7 @@ bool CBaseCombatCharacter::BecomeRagdoll( const CTakeDamageInfo &info, const Vec
 		return BecomeRagdollOnClient( forceVector );
 	}
 
+#ifdef EZ2
 	// DMG_NEVERGIB is used exclusively by crossbows at the moment. Things other than crossbows with that
 	// damage type may cause client ragdolls when we want server ragdolls. Consider a better check.
 	if ( info.GetDamageType() & DMG_NEVERGIB && TestRagdollPin( info.GetDamagePosition(), forceVector.Normalized() ) )
@@ -1749,6 +1750,7 @@ bool CBaseCombatCharacter::BecomeRagdoll( const CTakeDamageInfo &info, const Vec
 		// Server ragdolls can't be pinned, so use a client ragdoll
 		return BecomeRagdollOnClient( forceVector );
 	}
+#endif
 #endif
 
 	if ( (info.GetDamageType() & DMG_VEHICLE) && !g_pGameRules->IsMultiplayer() )

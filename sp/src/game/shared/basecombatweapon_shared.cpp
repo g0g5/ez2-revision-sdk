@@ -1835,6 +1835,7 @@ Activity CBaseCombatWeapon::GetDrawActivity( void )
 		// If the sequence exists, use ACT_VM_FIRSTRDAW instead of ACT_VM_DRAW
 		if (firstDrawSequence != -1)
 			return ACT_VM_FIRSTDRAW;
+	}
 #elif EZ2
 	Activity result;
 

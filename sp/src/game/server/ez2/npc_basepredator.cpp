@@ -281,6 +281,7 @@ int CNPC_BasePredator::TranslateSchedule( int scheduleType )
 	case SCHED_ALERT_STAND:
 		if ( m_tWanderState > WANDER_STATE_NEVER && m_tWanderState < WANDER_STATE_IDLE_ONLY ) {
 
+#ifdef EZ2
 			if ( HL2GameRules()->IsBeastInStealthMode() )
 			{
 				// If we haven't seen an enemy in 20 seconds, go back to idle
@@ -290,6 +291,7 @@ int CNPC_BasePredator::TranslateSchedule( int scheduleType )
 					SetCondition( COND_IDLE_INTERRUPT );
 				}
 			}
+#endif
 
 			return SCHED_PREDATOR_WANDER;
 		}
@@ -474,6 +476,7 @@ bool CNPC_BasePredator::OnObstructionPreSteer( AILocalMoveGoal_t *pMoveGoal, flo
 //-----------------------------------------------------------------------------
 bool CNPC_BasePredator::ShouldAttackObstruction( CBaseEntity *pEntity )
 {
+#ifdef EZ2
 	if (!npc_predator_obstruction_behavior.GetBool())
 		return false;
 
@@ -494,6 +497,9 @@ bool CNPC_BasePredator::ShouldAttackObstruction( CBaseEntity *pEntity )
 		return false;
 
 	return true;
+#else
+	return false;
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -689,8 +695,10 @@ bool CNPC_BasePredator::FValidateHintType( CAI_Hint *pHint )
 	if ( pHint->HintType() == HINT_HL1_WORLD_HUMAN_BLOOD )
 		return true;
 
+#ifdef EZ2
 	if ( pHint->HintType() == HINT_BEAST_HOME || pHint->HintType() == HINT_BEAST_FRUSTRATION )
 		return true;
+#endif
 
 	DevMsg( "Couldn't validate hint type" );
 

@@ -78,7 +78,9 @@ static const char *VORT_EXTRACT_FINISH = "VORT_EXTRACT_FINISH";
 #ifdef EZ2
 
 #define VORTIGAUNT_DRAIN_HEAL_MODIFIER 3.0f
+#endif
 
+#ifdef EZ
 // Unique vort boogie color
 static const Vector g_vecVortBoogieColor( 0.1675, 0.90, 0.1675 );
 #endif
@@ -90,8 +92,10 @@ ConVar sk_vortigaunt_armor_charge_per_token( "sk_vortigaunt_armor_charge_per_tok
 ConVar sk_vortigaunt_armor_charge_per_token( "sk_vortigaunt_armor_charge_per_token", "48" );
 #endif
 
-#ifdef EZ2
+#ifdef EZ
 ConVar sk_vortigaunt_npc_health_charge_per_token( "sk_vortigaunt_npc_health_charge_per_token", "50" );
+#endif
+#ifdef EZ2
 ConVar sk_vortigaunt_health_drain_per_token( "sk_vortigaunt_health_drain_per_token", "5" );
 ConVar sk_vortigaunt_health_drain_time( "sk_vortigaunt_health_drain_time", "15" );
 #endif
@@ -422,7 +426,11 @@ void CNPC_Vortigaunt::StartTask( const Task_t *pTask )
 			}
 			else
 			{
+#ifdef EZ2
 				m_nNumTokensToSpawn = ceil( ( pPlayer->ArmorValue() / sk_vortigaunt_armor_charge_per_token.GetFloat() ) + ( pPlayer->GetHealth() / ( sk_vortigaunt_health_drain_per_token.GetFloat() * VORTIGAUNT_DRAIN_HEAL_MODIFIER ) ) );
+#else
+				m_nNumTokensToSpawn = ceil( pPlayer->ArmorValue() / sk_vortigaunt_armor_charge_per_token.GetFloat() );
+#endif
 			}
 
 			// If we're forced to recharge, then at least send one
@@ -431,15 +439,19 @@ void CNPC_Vortigaunt::StartTask( const Task_t *pTask )
 		}
 		else 
 		{
+#ifdef EZ2
 			if (IRelationType( m_hHealTarget ) > D_FR)
+#endif
 			{
 				float flHealthDelta = m_hHealTarget->GetMaxHealth() - m_hHealTarget->GetHealth();
 				m_nNumTokensToSpawn = ceil( flHealthDelta / sk_vortigaunt_npc_health_charge_per_token.GetFloat() );
 			}
+#ifdef EZ2
 			else
 			{
 				m_nNumTokensToSpawn = ceil( m_hHealTarget->GetHealth() / sk_vortigaunt_health_drain_per_token.GetFloat() * VORTIGAUNT_DRAIN_HEAL_MODIFIER );
 			}
+#endif
 
 			m_nNumTokensToSpawn = m_nNumTokensToSpawn < 1 ? 1 : m_nNumTokensToSpawn;
 		}

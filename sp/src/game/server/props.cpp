@@ -5751,7 +5751,12 @@ class CPropDoorRotating : public CBasePropDoor
 	DECLARE_CLASS( CPropDoorRotating, CBasePropDoor );
 
 public:
-	CPropDoorRotating() { m_bOpenOnKick = true; }
+	CPropDoorRotating()
+	{
+#ifdef EZ2
+		m_bOpenOnKick = true;
+#endif
+	}
 	~CPropDoorRotating();
 
 	int		DrawDebugTextOverlays(void);

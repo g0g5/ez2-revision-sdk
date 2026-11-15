@@ -64,10 +64,13 @@ public:
 #ifdef EZ1
 		static const Vector cone = VECTOR_CONE_2DEGREES;
 		return cone;
-#else
+#elif defined( EZ2 )
 		static const Vector coneEZ1 = VECTOR_CONE_2DEGREES;
 		static const Vector cone = VECTOR_CONE_5DEGREES;
 		return weapon_smg1_use_ez1_accuracy.GetBool() ? coneEZ1 : cone;
+#else
+		static const Vector cone = VECTOR_CONE_5DEGREES;
+		return cone;
 #endif
 	}
 

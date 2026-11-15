@@ -9,9 +9,11 @@ Repo:
   - '.github/**'
 
 Project Generation:
-  - '**/src/vpc_scripts/**'
+  - 'CMakeLists.txt'
+  - 'build.ps1'
+  - 'cmake/**'
   - '**/src/devtools/**'
-  - '**/src/create*'
+  - '.github/workflows/**'
 
 Entities:
   - '**/src/game/**/**logic**'

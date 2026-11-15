@@ -1347,15 +1347,15 @@ void CHL2_Player::PostThink( void )
 		 HandleAdmireGlovesAnimation();
 	}
 
-#ifdef EZ
+#ifdef EZ2
 	if ( sv_player_stomp_tiny_hull.GetBool() && GetGroundEntity() && GetGroundEntity()->MyCombatCharacterPointer() && GetGroundEntity()->MyCombatCharacterPointer()->GetHullType() == HULL_TINY)
 	{
 		TraceKickAttack( GetGroundEntity() );
 		SetGroundEntity( NULL );
 	}
-#endif
 
 	HandleKickAnimation();
+#endif
 
 #ifdef SP_ANIM_STATE
 	if (m_pPlayerAnimState)
@@ -3466,7 +3466,7 @@ void CHL2_Player::Event_Killed( const CTakeDamageInfo &info )
 {
 	BaseClass::Event_Killed( info );
 
-#ifdef EZ
+#ifdef EZ2
 	// The player smells like food to nearby predators
 	if ( sv_player_death_smell.GetBool() )
 	{

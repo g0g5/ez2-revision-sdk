@@ -414,7 +414,11 @@ void C_GrenadeHopwire::ReceiveMessage( int classID, bf_read &msg )
 
 	case HOPWIRE_START_EXPLOSION:
 		{
+#ifdef EZ2
 			m_ExplosionEffect.SetExplosionType( m_iHopwireType );
+#else
+			m_ExplosionEffect.SetExplosionType( 0 );
+#endif
 			m_ExplosionEffect.SetActive();
 			m_ExplosionEffect.SetOwner( this );
 			m_ExplosionEffect.StartExplosion();

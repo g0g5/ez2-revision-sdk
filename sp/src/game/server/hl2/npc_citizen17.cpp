@@ -1939,10 +1939,12 @@ int CNPC_Citizen::SelectFailSchedule( int failedSchedule, int failedTask, AI_Tas
 //-----------------------------------------------------------------------------
 int CNPC_Citizen::SelectSchedule()
 {
-#ifdef EZ
+#ifdef EZ2
 	// TODO - Find a better spot for this!
 	TrySpeakBeg();
+#endif
 
+#ifdef EZ
 	// Reserve strategy slot if I am a rebel brute, otherwise clear
 	if ( m_Type == CT_BRUTE && !IsStrategySlotRangeOccupied( SQUAD_SLOT_CITIZEN_ADVANCE, SQUAD_SLOT_CITIZEN_ADVANCE ) )
 	{
@@ -7088,7 +7090,11 @@ WeaponProficiency_t CNPC_Citizen::CalcWeaponProficiency(CBaseCombatWeapon *pWeap
 bool CNPC_Citizen::IsJumpLegal(const Vector &startPos, const Vector &apex, const Vector &endPos) const
 {
 	// Jump rebels can jump incredible distances, but not if they have surrendered
-	if ( m_Type == CT_LONGFALL && !m_SurrenderBehavior.IsSurrendered() )
+	if ( m_Type == CT_LONGFALL
+#ifdef EZ2
+		&& !m_SurrenderBehavior.IsSurrendered()
+#endif
+		)
 	{
 		const float MAX_JUMP_RISE = 1024.0f; // This one might need some adjustment - how high is too high?
 		const float MAX_JUMP_DISTANCE = 1024.0f;

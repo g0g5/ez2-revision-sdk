@@ -1315,11 +1315,13 @@ const char *CNPC_Combine::GetBackupWeaponClass()
 //-----------------------------------------------------------------------------
 bool CNPC_Combine::CanOrderSurrender()
 {
+#ifdef EZ2
 	if (m_iCanOrderSurrender == TRS_NONE && IsPlayerAlly())
 	{
 		// Order surrenders if the player has ordered one before
 		return GlobalEntity_GetState( GLOBAL_PLAYER_ORDER_SURRENDER ) == GLOBAL_ON;
 	}
+#endif
 
 	return m_iCanOrderSurrender == TRS_TRUE;
 }

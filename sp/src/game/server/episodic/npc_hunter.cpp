@@ -1444,7 +1444,7 @@ public:
 	void            TaskFail( AI_TaskFailureCode_t code );
 	void			TaskFail( const char *pszGeneralFailText )	{ TaskFail( MakeFailCode( pszGeneralFailText ) ); }
 
-#ifdef EZ
+#ifdef EZ2
 	bool			ShouldRegenerateHealth( void ) { return m_bCompanionHunter; }
 
 	void			HunterUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );

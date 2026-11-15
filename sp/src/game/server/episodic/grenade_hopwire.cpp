@@ -677,8 +677,10 @@ bool VectorLessFunc( const Vector &lhs, const Vector &rhs )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-CGravityVortexController::CGravityVortexController( void ) : m_flEndTime( 0.0f ), m_flRadius( 256 ), m_flStrength( 256 ), m_flMass( 0.0f ),
-		m_flNodeRadius( 256.0f ), m_flConsumeRadius( 48.0f )
+CGravityVortexController::CGravityVortexController( void ) : m_flEndTime( 0.0f ), m_flRadius( 256 ), m_flStrength( 256 ), m_flMass( 0.0f )
+#ifdef EZ2
+		, m_flNodeRadius( 256.0f ), m_flConsumeRadius( 48.0f )
+#endif
 {
 #ifdef EZ2
 	SetDefLessFunc( m_ModelMass );

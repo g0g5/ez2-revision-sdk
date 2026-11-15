@@ -1619,7 +1619,9 @@ void CNPC_Advisor::StartLevitatingObjects()
 		}
 	}
 
+#ifdef EZ2
 	m_bLevitatingObjects = true;
+#endif
 }
 
 // This function is used by both version of the entity finder below 

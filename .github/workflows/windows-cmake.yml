@@ -1,0 +1,70 @@
+name: Windows CMake + Ninja
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.game }} / ${{ matrix.group }} / ${{ matrix.configuration }} (x86)
+    runs-on: windows-2022
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        game: [EZ2, EZ1, HL2, EPISODIC]
+        configuration: [Release, Debug]
+        group: [game]
+        include:
+          - game: EZ2
+            configuration: Release
+            group: tools
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # build.ps1 initializes the x86 MSVC environment with vswhere and uses
+      # Visual Studio's bundled CMake and Ninja. No separate setup is needed.
+      # Shaders are intentionally excluded: shadercompile.exe is not shipped,
+      # and the shader pipeline also requires native Windows Perl.
+      - name: Configure and build
+        run: |
+          ./build.ps1 -Game '${{ matrix.game }}' -Configuration '${{ matrix.configuration }}' -Group '${{ matrix.group }}' -Jobs 2
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $game = '${{ matrix.game }}'.ToLowerInvariant()
+          "GAME_BINARY_DIRECTORY=sp/game/mod_$game/bin" >> $env:GITHUB_ENV
+
+      - name: Publish game binaries
+        if: matrix.group == 'game'
+        uses: actions/upload-artifact@v4
+        with:
+          name: game_${{ matrix.game }}_win32_${{ matrix.configuration }}
+          path: |
+            ${{ env.GAME_BINARY_DIRECTORY }}/*.dll
+            ${{ env.GAME_BINARY_DIRECTORY }}/*.pdb
+            thirdpartylegalnotices.txt
+          if-no-files-found: error
+
+      - name: Publish tools
+        if: matrix.group == 'tools'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tools_win32_${{ matrix.configuration }}
+          path: |
+            sp/game/bin/*.exe
+            sp/game/bin/*.dll
+            sp/game/bin/*.pdb
+            thirdpartylegalnotices.txt
+          if-no-files-found: error

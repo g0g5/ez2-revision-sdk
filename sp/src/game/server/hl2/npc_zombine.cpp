@@ -100,7 +100,9 @@ public:
 	void EquipWeapon();
 	void Precache( void );
 
+#ifdef EZ
 	void AllocPooledStringsForGrenadeTypes();
+#endif
 
 	void SetZombieModel( void );
 
@@ -311,6 +313,7 @@ LINK_ENTITY_TO_CLASS( npc_hevzombie, CNPC_HEVZombie );
 
 //---------------------------------------------------------------------------------
 
+#ifdef EZ2
 ConVar	sk_zombie_elite_health( "sk_zombie_elite_health", "140" );
 ConVar	sk_zombie_grunt_health( "sk_zombie_grunt_health", "75" );
 ConVar	sk_zombie_ordinal_health( "sk_zombie_ordinal_health", "90" );
@@ -372,7 +375,8 @@ BEGIN_DATADESC( CNPC_HuskZombine )
 END_DATADESC()
 
 LINK_ENTITY_TO_CLASS( npc_husk_zombine, CNPC_HuskZombine );
-#endif
+#endif // EZ2
+#endif // EZ
 
 //---------------------------------------------------------
 //---------------------------------------------------------
@@ -555,6 +559,7 @@ void CNPC_Zombine::Precache( void )
 #endif
 }
 
+#ifdef EZ
 void CNPC_Zombine::AllocPooledStringsForGrenadeTypes()
 {
 	gm_iszZombineGrenadeTypeFrag = AllocPooledString( "npc_grenade_frag" );
@@ -563,6 +568,7 @@ void CNPC_Zombine::AllocPooledStringsForGrenadeTypes()
 	gm_iszZombineGrenadeTypeManhack = AllocPooledString( "npc_manhack" );
 	gm_iszZombineGrenadeTypeCrowbar = AllocPooledString( "weapon_crowbar" );
 }
+#endif
 
 void CNPC_Zombine::SetZombieModel( void )
 {
@@ -2285,6 +2291,7 @@ void CNPC_HEVZombie::Event_Killed( const CTakeDamageInfo &info )
 	}
 }
 
+#ifdef EZ2
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 void CNPC_HuskZombine::Spawn( void )
@@ -2447,7 +2454,8 @@ float CNPC_HuskZombine::GetHitgroupDamageMultiplier( int iHitGroup, const CTakeD
 
 	return flBase;
 }
-#endif
+#endif // EZ2
+#endif // EZ
 
 //-----------------------------------------------------------------------------
 //

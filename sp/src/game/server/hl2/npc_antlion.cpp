@@ -533,7 +533,7 @@ void CNPC_Antlion::Precache( void )
 		PropBreakablePrecacheAll( GetModelName() );
 #else
 		PrecacheModel( DefaultOrCustomModel( ANTLION_WORKER_MODEL ) );
-		PropBreakablePrecacheAll( MAKE_STRING( DefaultOrCustomModel( ANTLION_WORKE
+		PropBreakablePrecacheAll( MAKE_STRING( DefaultOrCustomModel( ANTLION_WORKER_MODEL ) ) );
 #endif
 		UTIL_PrecacheOther( "grenade_spit" );
 		PrecacheParticleSystem( "blood_impact_antlion_worker_01" );

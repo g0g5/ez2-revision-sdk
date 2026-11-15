@@ -59,8 +59,9 @@ public:
 
 	bool	ShouldDisplayHUDHint() { return true; }
 
-
+#ifdef EZ2
 	virtual HopwireStyle GetHopwireStyle() { return HOPWIRE_XEN; }
+#endif
 
 protected:
 	virtual void	ThrowGrenade( CBasePlayer *pPlayer );

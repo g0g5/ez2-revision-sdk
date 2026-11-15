@@ -641,6 +641,7 @@ void CNPC_MetroPolice::PrescheduleThink( void )
 #endif
 }
 
+#ifdef EZ2
 // Inspired by npc_clonecop weapon switching
 // Metropolice should change to and from melee weapons
 void CNPC_MetroPolice::TryWeaponSwap(  )
@@ -735,6 +736,7 @@ int CNPC_MetroPolice::FindWeaponToSwap( bool bMeleeWeapon )
 
 	return iWeaponIndex;
 }
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: 

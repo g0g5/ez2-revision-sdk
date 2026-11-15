@@ -1,0 +1,42 @@
+# Explicit source inventory and target-specific settings. Edit this file when adding sources.
+set(revision_sources
+    "${REVISION_SRC}/fgdlib/gamedata.cpp"
+    "${REVISION_SRC}/fgdlib/gdclass.cpp"
+    "${REVISION_SRC}/fgdlib/gdvar.cpp"
+    "${REVISION_SRC}/fgdlib/inputoutput.cpp"
+    "${REVISION_SRC}/fgdlib/wckeyvalues.cpp"
+)
+
+set(revision_definitions
+    "RAD_TELEMETRY_DISABLED"
+    "MAPBASE"
+    "GAMEPADUI"
+    "STEAMWORKS_VERSION=1261"
+    "STEAM_INPUT"
+    "WIN32"
+    "_WIN32"
+    "NDEBUG"
+    "_LIB"
+    "_CRT_SECURE_NO_DEPRECATE"
+    "_CRT_NONSTDC_NO_DEPRECATE"
+    "_ALLOW_RUNTIME_LIBRARY_MISMATCH"
+    "_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH"
+    "_ALLOW_MSC_VER_MISMATCH"
+    "COMPILER_MSVC32"
+    "COMPILER_MSVC"
+    "_DLL_EXT=.dll"
+    "LIBNAME=fgdlib"
+    "BINK_VIDEO"
+    "AVI_VIDEO"
+    "WMV_VIDEO"
+    "DEV_BUILD"
+    "FRAME_POINTER_OMISSION_DISABLED"
+)
+
+set(revision_includes
+    "${REVISION_SRC}/common"
+    "${REVISION_SRC}/public"
+    "${REVISION_SRC}/public/tier0"
+    "${REVISION_SRC}/public/tier1"
+    "${REVISION_SRC}/utils/common"
+)

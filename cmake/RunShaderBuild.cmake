@@ -1,0 +1,93 @@
+cmake_minimum_required(VERSION 3.24)
+
+if(NOT DEFINED MANIFEST OR NOT DEFINED WORK_DIR OR NOT DEFINED MODE)
+    message(FATAL_ERROR "RunShaderBuild needs MANIFEST, WORK_DIR and MODE.")
+endif()
+include("${MANIFEST}")
+if(NOT IS_ABSOLUTE "${WORK_DIR}")
+    message(FATAL_ERROR "Shader work directory must be an absolute build-tree path.")
+endif()
+
+if(MODE STREQUAL "PREPARE")
+    # A fresh private staging area prevents stale combo worklists and outputs.
+    # Never write generated files into the source tree or execute a batch file.
+    file(REMOVE_RECURSE "${WORK_DIR}")
+    file(MAKE_DIRECTORY "${WORK_DIR}/fxctmp9" "${WORK_DIR}/shaders/fxc")
+    file(COPY ${_inputs} "${_shader_dir}/${_project}.txt" DESTINATION "${WORK_DIR}")
+    get_filename_component(_helper_dir "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
+    execute_process(COMMAND "${REVISION_SHADER_PERL_EXECUTABLE}"
+            "${_helper_dir}/ShaderPrep.pl" prepare "${REVISION_SRC}" "${_project}" "${_model}"
+        WORKING_DIRECTORY "${WORK_DIR}" RESULT_VARIABLE _result)
+    if(NOT _result EQUAL 0)
+        message(FATAL_ERROR "Shader header/worklist generation failed (${_result}).")
+    endif()
+    foreach(_name IN LISTS _names)
+        set(_inc "${WORK_DIR}/fxctmp9_tmp/${_name}.inc")
+        if(NOT EXISTS "${_inc}")
+            message(FATAL_ERROR "Shader generator did not create ${_inc}")
+        endif()
+        execute_process(COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+                "${_inc}" "${WORK_DIR}/fxctmp9/${_name}.inc"
+            COMMAND_ERROR_IS_FATAL ANY)
+    endforeach()
+    if(NOT EXISTS "${WORK_DIR}/filelistgen.txt")
+        message(FATAL_ERROR "Shader generator did not create filelistgen.txt")
+    endif()
+    file(SIZE "${WORK_DIR}/filelistgen.txt" _size)
+    if(_size EQUAL 0)
+        message(FATAL_ERROR "Shader compiler worklist is empty.")
+    endif()
+    configure_file("${WORK_DIR}/filelistgen.txt" "${WORK_DIR}/filelist.txt" COPYONLY)
+    # The old makefile added each shader plus recursively discovered includes.
+    # Supplying the staged input superset also covers includes in inactive HLSL
+    # branches, and avoids the old unquoted 'echo' and 'copy' shell commands.
+    set(_copy_list ${_runtime})
+    foreach(_input IN LISTS _inputs)
+        get_filename_component(_name "${_input}" NAME)
+        list(APPEND _copy_list "${_name}")
+    endforeach()
+    list(REMOVE_DUPLICATES _copy_list)
+    list(SORT _copy_list)
+    string(REPLACE ";" "\n" _copy_text "${_copy_list}")
+    file(WRITE "${WORK_DIR}/uniquefilestocopy.txt" "${_copy_text}\n")
+    file(TOUCH "${WORK_DIR}/prepared.stamp")
+elseif(MODE STREQUAL "COMPILE")
+    foreach(_required IN ITEMS filelist.txt uniquefilestocopy.txt prepared.stamp)
+        if(NOT EXISTS "${WORK_DIR}/${_required}")
+            message(FATAL_ERROR "Shader prerequisite is missing: ${WORK_DIR}/${_required}")
+        endif()
+    endforeach()
+    # Some Valve tool versions return success even when a shader fails. Remove
+    # old outputs first, then explicitly require every expected nonempty VCS.
+    foreach(_name IN LISTS _names)
+        file(REMOVE "${WORK_DIR}/shaders/fxc/${_name}.vcs")
+    endforeach()
+    get_filename_component(_bin "${REVISION_SHADERCOMPILE_EXECUTABLE}" DIRECTORY)
+    set(ENV{dynamic_shaders} 0)
+    set(ENV{DIRECTX_FORCE_MODEL} "")
+    if(_model STREQUAL "30")
+        set(ENV{DIRECTX_FORCE_MODEL} 30)
+    endif()
+    set(ENV{DIRECTX_SDK_VER} "${_dx_version}")
+    # Match buildshaders.bat's -game/-source tool invocation, but run the real
+    # executable directly from its runtime directory (DLL loading requirement).
+    file(TO_NATIVE_PATH "${WORK_DIR}" _native_work)
+    execute_process(COMMAND "${REVISION_SHADERCOMPILE_EXECUTABLE}"
+            -nompi -nop4 -game "${game_dir}" -shaderpath "${_native_work}" -allowdebug
+        WORKING_DIRECTORY "${_bin}" RESULT_VARIABLE _result)
+    if(NOT _result EQUAL 0)
+        message(FATAL_ERROR "Valve shadercompile failed (${_result}); see its diagnostics above.")
+    endif()
+    foreach(_name IN LISTS _names)
+        set(_vcs "${WORK_DIR}/shaders/fxc/${_name}.vcs")
+        if(NOT EXISTS "${_vcs}")
+            message(FATAL_ERROR "Valve shadercompile did not produce ${_vcs}")
+        endif()
+        file(SIZE "${_vcs}" _size)
+        if(_size EQUAL 0)
+            message(FATAL_ERROR "Valve shadercompile produced an empty file: ${_vcs}")
+        endif()
+    endforeach()
+else()
+    message(FATAL_ERROR "Unknown shader build MODE: ${MODE}")
+endif()

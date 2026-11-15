@@ -461,7 +461,9 @@ void CRagdollProp::UpdateOnRemove( void )
 CRagdollProp::CRagdollProp( void )
 {
 	m_strSourceClassName = NULL_STRING;
+#ifdef EZ2
 	m_iSourceClassification = CLASS_NONE;
+#endif
 	m_anglesOverrideString = NULL_STRING;
 	m_ragdoll.listCount = 0;
 	Assert( (1<<RAGDOLL_INDEX_BITS) >=RAGDOLL_MAX_ELEMENTS );

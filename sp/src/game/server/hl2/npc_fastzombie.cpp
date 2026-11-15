@@ -972,7 +972,11 @@ const char *CFastZombie::GetHeadcrabClassname( void )
 
 const char *CFastZombie::GetHeadcrabModel( void )
 {
+#ifdef EZ
 	return pHeadcrabModelNames[ m_tEzVariant ];
+#else
+	return "models/headcrab.mdl";
+#endif
 }
 
 //-----------------------------------------------------------------------------

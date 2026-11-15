@@ -56,7 +56,10 @@ struct DisplacementInfo_t
 #define SF_VORTEX_CONTROLLER_DONT_SPAWN_LIFE (1 << 1)
 #endif
 
-class CGravityVortexController : public CBaseEntity, public CDisplacerSink
+class CGravityVortexController : public CBaseEntity
+#ifdef EZ2
+	, public CDisplacerSink
+#endif
 {
 	DECLARE_CLASS( CGravityVortexController, CBaseEntity );
 	DECLARE_DATADESC();

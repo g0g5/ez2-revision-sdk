@@ -815,7 +815,11 @@ const char *CZombie::GetHeadcrabClassname( void )
 //-----------------------------------------------------------------------------
 const char *CZombie::GetHeadcrabModel( void )
 {
+#ifdef EZ
 	return pHeadcrabModelNames[ m_tEzVariant ];
+#else
+	return "models/headcrabclassic.mdl";
+#endif
 }
 #ifndef EZ
 //-----------------------------------------------------------------------------
