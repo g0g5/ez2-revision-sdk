@@ -44,174 +44,25 @@ Configure all games without starting a build.
 [CmdletBinding()]
 param(
     [ValidateSet('EZ2', 'EZ1', 'HL2', 'EPISODIC', 'All')]
-    [string[]] $Game = @('EZ2'),
+    [string[]] $Game,
 
     [ValidateSet('Debug', 'Release')]
-    [string] $Configuration = 'Release',
+    [string] $Configuration,
 
     [ValidateSet('game', 'shaders', 'maptools', 'tools', 'everything')]
-    [string] $Group = 'game',
+    [string] $Group,
 
     [ValidateNotNullOrEmpty()]
     [string[]] $Target,
 
     [ValidateRange(1, 2147483647)]
-    [int] $Jobs = [Environment]::ProcessorCount,
+    [int] $Jobs,
 
     [switch] $Clean,
     [switch] $ConfigureOnly,
     [string] $BuildDirectory,
-    [string[]] $CMakeArguments = @()
+    [string[]] $CMakeArguments
 )
 
-Set-StrictMode -Version Latest
-$ErrorActionPreference = 'Stop'
-# Inspect native exit codes explicitly, regardless of the caller's preference.
-$PSNativeCommandUseErrorActionPreference = $false
-
-$exitCode = 0
-$savedEnvironment = $null
-
-function Invoke-CMake {
-    param([string[]] $Arguments)
-
-    & $script:cmakePath @Arguments
-    if ($LASTEXITCODE -ne 0) {
-        $script:exitCode = $LASTEXITCODE
-        throw "CMake failed with exit code $LASTEXITCODE."
-    }
-}
-
-try {
-    if (-not $IsWindows) {
-        throw 'This script supports Windows x86 builds only. Run it with PowerShell 7 on Windows.'
-    }
-
-    $games = [System.Collections.Generic.List[string]]::new()
-    foreach ($entry in $Game) {
-        $expanded = if ($entry -ieq 'All') {
-            @('EZ2', 'EZ1', 'HL2', 'EPISODIC')
-        } else {
-            @($entry.ToUpperInvariant())
-        }
-        foreach ($name in $expanded) {
-            if (-not $games.Contains($name)) {
-                $games.Add($name)
-            }
-        }
-    }
-    if ($games.Count -eq 0) {
-        throw 'Specify at least one game with -Game.'
-    }
-
-    # ValidateSet is case-insensitive; canonicalize paths and CMake values.
-    $Configuration = if ($Configuration -ieq 'Debug') { 'Debug' } else { 'Release' }
-    $Group = $Group.ToLowerInvariant()
-    if ([string]::IsNullOrWhiteSpace($BuildDirectory)) {
-        $BuildDirectory = Join-Path 'build' (Join-Path ($games -join '-') $Configuration)
-    }
-    if (-not [IO.Path]::IsPathFullyQualified($BuildDirectory)) {
-        $BuildDirectory = Join-Path $PSScriptRoot $BuildDirectory
-    }
-    $BuildDirectory = [IO.Path]::GetFullPath($BuildDirectory)
-
-    $vswherePath = $null
-    foreach ($programFiles in @(${env:ProgramFiles(x86)}, $env:ProgramFiles)) {
-        if ($programFiles) {
-            $candidate = Join-Path $programFiles 'Microsoft Visual Studio/Installer/vswhere.exe'
-            if (Test-Path -LiteralPath $candidate -PathType Leaf) {
-                $vswherePath = $candidate
-                break
-            }
-        }
-    }
-    if (-not $vswherePath) {
-        $vswhereCommand = Get-Command vswhere.exe -CommandType Application -ErrorAction SilentlyContinue
-        if ($vswhereCommand) {
-            $vswherePath = $vswhereCommand.Source
-        }
-    }
-    if (-not $vswherePath) {
-        throw 'vswhere.exe was not found. Install Visual Studio Installer and the Desktop development with C++ workload (including x86/x64 tools).'
-    }
-
-    $installationPaths = @(& $vswherePath -latest -prerelease -products '*' `
-        -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath)
-    if ($LASTEXITCODE -ne 0) {
-        $exitCode = $LASTEXITCODE
-        throw "vswhere failed with exit code $LASTEXITCODE."
-    }
-    $vsPath = $installationPaths | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -First 1
-    if (-not $vsPath) {
-        throw 'No Visual Studio installation with x86/x64 C++ tools was found. Install the Desktop development with C++ workload in Visual Studio Build Tools.'
-    }
-    $vsPath = $vsPath.Trim()
-
-    $devShellPath = Join-Path $vsPath 'Common7/Tools/Microsoft.VisualStudio.DevShell.dll'
-    $cmakePath = Join-Path $vsPath 'Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe'
-    $ninjaPath = Join-Path $vsPath 'Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe'
-    foreach ($tool in @(
-        @{ Name = 'Microsoft.VisualStudio.DevShell.dll'; Path = $devShellPath; Remedy = 'Repair the Visual Studio installation.' },
-        @{ Name = 'CMake'; Path = $cmakePath; Remedy = 'Install the C++ CMake tools for Windows component in Visual Studio Installer.' },
-        @{ Name = 'Ninja'; Path = $ninjaPath; Remedy = 'Install the C++ CMake tools for Windows component in Visual Studio Installer.' }
-    )) {
-        if (-not (Test-Path -LiteralPath $tool.Path -PathType Leaf)) {
-            throw "$($tool.Name) was not found at '$($tool.Path)'. $($tool.Remedy)"
-        }
-    }
-
-    $savedEnvironment = [Environment]::GetEnvironmentVariables('Process')
-    Import-Module $devShellPath -Scope Local -ErrorAction Stop
-    Enter-VsDevShell -VsInstallPath $vsPath -SkipAutomaticLocation `
-        -DevCmdArguments '-arch=x86 -host_arch=x64' -ErrorAction Stop
-    if ($env:VSCMD_ARG_HOST_ARCH -ine 'x64' -or $env:VSCMD_ARG_TGT_ARCH -ine 'x86') {
-        throw 'Visual Studio developer shell did not initialize the required x64 host / x86 target environment.'
-    }
-
-    Write-Host "Visual Studio: $vsPath"
-    Write-Host "Games: $($games -join ', '); configuration: $Configuration; group: $Group"
-    Write-Host "Build directory: $BuildDirectory"
-
-    $configureArguments = @(
-        '-S', $PSScriptRoot,
-        '-B', $BuildDirectory,
-        '-G', 'Ninja',
-        "-DCMAKE_BUILD_TYPE=$Configuration",
-        "-DCMAKE_MAKE_PROGRAM=$ninjaPath",
-        "-DREVISION_GAMES=$($games -join ';')",
-        "-DREVISION_BUILD_GROUP=$Group"
-    ) + $CMakeArguments
-    Invoke-CMake -Arguments $configureArguments
-
-    if (-not $ConfigureOnly) {
-        $buildArguments = @('--build', $BuildDirectory, '--parallel', "$Jobs")
-        if ($Clean) {
-            $buildArguments += '--clean-first'
-        }
-        if ($Target) {
-            $buildArguments += '--target'
-            $buildArguments += $Target
-        }
-        Invoke-CMake -Arguments $buildArguments
-    }
-} catch {
-    if ($exitCode -eq 0) {
-        $exitCode = 1
-    }
-    Write-Error -Message $_.Exception.Message -ErrorAction Continue
-} finally {
-    if ($null -ne $savedEnvironment) {
-        # Restore only this process, including variables introduced by DevShell.
-        $currentEnvironment = [Environment]::GetEnvironmentVariables('Process')
-        foreach ($name in $currentEnvironment.Keys) {
-            if (-not $savedEnvironment.Contains($name)) {
-                [Environment]::SetEnvironmentVariable($name, $null, 'Process')
-            }
-        }
-        foreach ($name in $savedEnvironment.Keys) {
-            [Environment]::SetEnvironmentVariable($name, $savedEnvironment[$name], 'Process')
-        }
-    }
-}
-
-exit $exitCode
+& (Join-Path $PSScriptRoot 'scripts/Invoke-Build.ps1') @PSBoundParameters
+exit $LASTEXITCODE

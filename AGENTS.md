@@ -58,6 +58,7 @@ revision-sdk/
 Run from the repository root with PowerShell 7. `build.ps1` finds VS and its bundled CMake/Ninja automatically.
 
 ```powershell
+./check.ps1 -Game EZ2 -Files sp/src/game/server/ai_basenpc_movement.cpp,sp/src/game/server/ai_basenpc.h
 ./build.ps1                                      # EZ2 Release, incremental
 ./build.ps1 -Configuration Debug
 ./build.ps1 -Game All                            # HL2, Episodic, EZ1, EZ2
@@ -65,7 +66,8 @@ Run from the repository root with PowerShell 7. `build.ps1` finds VS and its bun
 ./build.ps1 -Target client_ez2                   # One DLL and its dependencies
 ```
 
-- Verification is compilation plus an in-game smoke test. There is no unit-test or packaging target; run the mod under `steamapps/sourcemods` to validate gameplay.
+- After each batch of C/C++ edits, pass the changed sources and headers to `check.ps1`. It incrementally compiles MSVC x86 objects for each source variant and uses Ninja's recorded includes to check one translation unit per known target for each header. In a fresh build tree, include a source that uses the header.
+- Build the affected DLL target to check linking. Run the mod under `steamapps/sourcemods` to validate gameplay. There is no unit-test or packaging target.
 - Add sources to `cmake/targets/*.cmake`; shared client/server sources belong in the corresponding `*_common.cmake`. Build artifacts and caches live under `build/`, game DLLs/PDBs under `sp/game/mod_<game>/bin`, tools under `sp/game/bin`.
 - Keep x86: the engine ABI and vendored libraries are 32-bit. Static SDK libraries are rebuilt in the build tree, not over the vendored `.lib` files.
 - `phonemeextractor` and `qc_eyes` require obsolete toolsets/MFC and are not build targets. GamepadUI implementation is external; this repository builds only its existing game hooks.
