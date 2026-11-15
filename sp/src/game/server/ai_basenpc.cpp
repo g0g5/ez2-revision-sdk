@@ -12688,6 +12688,10 @@ BEGIN_DATADESC( CAI_BaseNPC )
 
 	DEFINE_KEYFIELD( m_flSpeedModifier, FIELD_FLOAT, "BaseSpeedModifier" ),
 	DEFINE_FIELD( m_FakeSequenceGestureLayer,	FIELD_INTEGER ),
+
+	DEFINE_KEYFIELD( m_flJumpUpOverride, FIELD_FLOAT, "JumpUpOverride" ),
+	DEFINE_KEYFIELD( m_flJumpDownOverride, FIELD_FLOAT, "JumpDownOverride" ),
+	DEFINE_KEYFIELD( m_flJumpDistOverride, FIELD_FLOAT, "JumpDistOverride" ),
 #endif
 
 	// Satisfy classcheck
@@ -12794,6 +12798,9 @@ BEGIN_DATADESC( CAI_BaseNPC )
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetDistTooFar", InputSetDistTooFar ),
 
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetSpeedModifier", InputSetSpeedModifier ),
+	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetMaxJumpUp", InputSetJumpUp ),
+	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetMaxJumpDown", InputSetJumpDown ),
+	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetMaxJumpDist", InputSetJumpDist ),
 
 	DEFINE_OUTPUT( m_OnStateChange,	"OnStateChange" ),
 #endif
@@ -13644,6 +13651,9 @@ CAI_BaseNPC::CAI_BaseNPC(void)
 #ifdef MAPBASE
 	m_iDynamicInteractionsAllowed = TRS_NONE;
 	m_flSpeedModifier = 1.0f;
+	m_flJumpUpOverride = 0.0f;
+	m_flJumpDownOverride = 0.0f;
+	m_flJumpDistOverride = 0.0f;
 
 	m_FakeSequenceGestureLayer = -1;
 #endif
@@ -15419,6 +15429,21 @@ float CAI_BaseNPC::GetSequenceGroundSpeed( CStudioHdr *pStudioHdr, int iSequence
 void CAI_BaseNPC::InputSetSpeedModifier( inputdata_t &inputdata )
 {
 	this->m_flSpeedModifier = inputdata.value.Float();
+}
+
+void CAI_BaseNPC::InputSetJumpUp( inputdata_t &inputdata )
+{
+	m_flJumpUpOverride = inputdata.value.Float();
+}
+
+void CAI_BaseNPC::InputSetJumpDown( inputdata_t &inputdata )
+{
+	m_flJumpDownOverride = inputdata.value.Float();
+}
+
+void CAI_BaseNPC::InputSetJumpDist( inputdata_t &inputdata )
+{
+	m_flJumpDistOverride = inputdata.value.Float();
 }
 #endif
 

@@ -2212,6 +2212,11 @@ public:
 	void InputForgetEntity( inputdata_t &inputdata );
 	void InputIgnoreDangerSounds( inputdata_t &inputdata );
 	void InputUpdateEnemyMemory( inputdata_t &inputdata );
+#ifdef MAPBASE
+	void InputSetJumpUp( inputdata_t &inputdata );
+	void InputSetJumpDown( inputdata_t &inputdata );
+	void InputSetJumpDist( inputdata_t &inputdata );
+#endif
 
 	//---------------------------------
 	
@@ -2601,6 +2606,13 @@ protected:
 	virtual void		  SetGlowSpritePtr(int i, CSprite * sprite);
 	virtual EyeGlow_t	* GetEyeGlowData(int i);
 	virtual int			GetNumGlows() { return 1; };
+#endif
+
+#ifdef MAPBASE
+protected:
+	float				m_flJumpUpOverride;
+	float				m_flJumpDownOverride;
+	float				m_flJumpDistOverride;
 #endif
 };
 
