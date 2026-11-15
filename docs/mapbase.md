@@ -1,130 +1,9 @@
-               Entropy : Zero
+# Mapbase v8.0 - Source 2013
 
-This repository contains the code for the Half-Life 2 modifications Entropy : Zero (EZ1) and Entropy : Zero 2 (EZ2).
-https://store.steampowered.com/app/714070/Entropy__Zero/
+https://github.com/mapbase-source/source-sdk-2013
+https://www.moddb.com/mods/mapbase
 
-The manhack weapon was originally created by the Half-Life 2: Short Stories Team for Human Error (HE) and modified for EZ. Likewise the drivable Combine APC was originally created by the Half-Life 2: Short Stories Team for HE and has been adapted for EZ2. The original v1 and v2 EZ1 code changes were originally made by Breadman AKA John Richardson. They have been adapted with preprocessor directives "EZ" and "EZ1" to separate them from the original Source SDK 2013 code.
-
-Entropy : Zero 2 makes use of the Improved Advisor created by Alex 'Maestra Fénix' Bravo.
-https://github.com/MaestroFenix/ImprovedAdvisor
-
-WINDOWS BUILD (CMake + Ninja)
-
-Requirements:
-- Windows and PowerShell 7 (pwsh).
-- Visual Studio 2022 or 2026, with Desktop development with C++, the MSVC x86/x64
-  tools, a Windows SDK, and C++ CMake tools for Windows (bundled CMake and Ninja).
-- The engine and the vendored SDK libraries use the Windows x86 (32-bit) ABI.
-  Keep this ABI even on 64-bit Windows; x64 game binaries are not compatible.
-
-Run from the repository root in PowerShell 7:
-
-    ./build.ps1
-
-This configures and builds EZ2 Release, group game. The script uses vswhere to
-locate Visual Studio (including preview installations), initializes its developer
-shell for an x64 host and x86 target, and uses that installation's bundled CMake
-and Ninja. A pre-initialized developer terminal is not required. Environment
-changes are limited to the current process and restored when the script exits.
-
-Build options:
-- -Game EZ2,EZ1,HL2,EPISODIC selects one or more games. The default is EZ2;
-  -Game All selects all four games.
-- -Group game|maptools|tools|shaders|everything selects the default build group.
-  game builds the selected client/server DLLs; maptools builds VBSP, VVIS and
-  VRAD; tools includes maptools plus the other supported utilities and example
-  server plugin. everything includes game, tools and shaders. The default is game.
-- -Target selects individual configured Ninja targets instead of the default
-  group, for example client_ez2, server_ez2, vbsp or captioncompiler. A game's
-  targets are available only when that game is selected by -Game. Shader targets
-  require -Group shaders or everything.
-- -Configuration Release|Debug selects the configuration (default Release).
-- -Jobs N sets parallel build jobs (default: logical processor count).
-- -Clean cleans before building; it does not delete the CMake cache.
-- -ConfigureOnly configures without building or cleaning.
-- -BuildDirectory PATH overrides build/<games-joined-by-hyphens>/<Configuration>.
-  Relative paths are resolved against the repository root.
-- -CMakeArguments accepts an array of additional CMake configure arguments.
-  Quote arguments containing spaces or semicolons.
-
-Examples (PowerShell 7):
-
-    ./build.ps1 -Game EZ2,EZ1 -Configuration Debug -Jobs 8
-    ./build.ps1 -Game HL2 -Target client_hl2 -Clean
-    ./build.ps1 -Group tools -Configuration Release
-    ./build.ps1 -Game All -ConfigureOnly -BuildDirectory build/all-debug -Configuration Debug
-    ./build.ps1 -CMakeArguments '-DREVISION_USE_PCH=OFF'
-
-Root CMake cache variables:
-- REVISION_GAMES: semicolon-separated game list, default EZ2; valid entries are
-  EZ2, EZ1, HL2 and EPISODIC. All is a build.ps1 convenience, not a CMake value.
-- REVISION_BUILD_GROUP: game (default), maptools, tools, shaders or everything.
-- REVISION_USE_PCH: game DLL precompiled headers, default ON.
-- REVISION_BUILD_EXPANDED_STEAM: rebuild Expanded Steam from source, default OFF.
-- REVISION_STEAMWORKS_VERSION: integer Steamworks header version, default 1261.
-  See README_EXPANDED_STEAM.md before changing Steamworks headers or libraries.
-
-For example, to pass a game list directly as a CMake cache argument:
-
-    ./build.ps1 -CMakeArguments '-DREVISION_GAMES=EZ2;EZ1', '-DREVISION_USE_PCH=OFF'
-
-Prefer -Game when selecting games so the default build directory matches the
-selection. Keep distinct build trees for different configurations. Game outputs
-are written to sp/game/mod_<game>/bin (lowercase game name, for example
-sp/game/mod_ez2/bin); tools go to sp/game/bin. Intermediates, generated build
-files and static libraries stay under the build directory. Different
-configurations share runtime output directories: a later build replaces those
-binaries. To install an E:Z mod, copy its complete mod directory, including the
-built bin files and required game content, to Steam/SteamApps/sourcemods. The EZ2
-content directory is not included here; building its DLLs does not install the
-mod's assets.
-
-SOURCE LIST MAINTENANCE
-
-The build uses native CMake source inventories in cmake/targets/*.cmake.
-client_common.cmake and server_common.cmake contain the shared source intersection
-for their respective game DLLs; client_<game>.cmake and server_<game>.cmake hold
-the per-game differences. When adding or removing C++ sources, update the
-appropriate inventory explicitly. Put a source in a common list only when every
-supported game on that side uses it, and check the affected game/configuration
-combinations. Other libraries and tools have their own target inventories.
-
-SHADERS (OPTIONAL)
-
-The shaders and everything groups require Valve's shadercompile.exe, which is
-not supplied in this repository, its matching engine DLLs alongside it, and a
-native Windows Perl installation (for example Strawberry Perl). Git/MSYS/Cygwin
-Perl is not suitable. Without these dependencies, use game, maptools or tools.
-To build shaders after supplying those tools:
-
-    ./build.ps1 -Game EZ2 -Group shaders -CMakeArguments '-DREVISION_SHADERCOMPILE_EXECUTABLE=C:/SDK/bin/shadercompile.exe', '-DREVISION_SHADER_PERL_EXECUTABLE=C:/Strawberry/perl/bin/perl.exe'
-
-Shader DLLs go to the selected mod's bin directory and shader bytecode to its
-shaders/fxc directory. Shader intermediates remain in the build tree. The
-stdshader_dx9_*.txt files are checked-in inputs; update them when adding or
-removing shader combinations. Shader compilation is not part of the default CI.
-
-VALIDATION AND CI
-
-The Windows CMake + Ninja workflow requests Release and Debug builds for EZ2,
-EZ1, HL2 and EPISODIC, plus tools in Release. Release builds for all four games,
-an EZ2 Debug build, and the tools/maptools groups have been verified locally on
-VS 2026. The remaining Debug combinations are part of the CI matrix, which
-describes intended coverage. Compilation does not replace in-game runtime testing.
-
-GamepadUI is not part of this repository's build: only the existing game hooks
-are compiled. Bring your own implementation and CMake target if you need that
-integration. The shader groups stay opt-in because their Valve tooling is not
-redistributable.
-
-
-//=========================================================================================================================
-
-               Mapbase v8.0 - Source 2013
-	https://github.com/mapbase-source/source-sdk-2013
-		https://www.moddb.com/mods/mapbase
-	
-//=========================================================================================================================
+---
 
 This repository contains code from Mapbase, a modification of the Source 2013 SDK which serves as a combined package
 of general-purpose improvements, fixes, and utility features for mods.
@@ -143,7 +22,7 @@ Mapbase's main content in this repository may include:
 For more information, view this page:
 https://github.com/mapbase-source/source-sdk-2013/wiki/Introduction-to-Mapbase
 
-//=========================================================================================================================
+---
 
 Mapbase is an open-source project and its contents can be distributed and used at the discretion of its users. However, this project contains content from
 a vast number of different sources which have their own licensing or attribution requirements. We try to handle most of that ourselves, but users who plan on
@@ -152,7 +31,7 @@ distributing Mapbase content are expected to comply with certain rules.
 	Up-to-date information about Mapbase content usage and credit are addressed in this article on Mapbase's wiki:
 		https://github.com/mapbase-source/source-sdk-2013/wiki/Using-Mapbase-Content
 
-//=========================================================================================================================
+---
 
 >>>>>>>> EXTERNAL CONTENT USED IN MAPBASE <<<<<<<<
 
@@ -190,7 +69,7 @@ including radial fog, rope code, and treesway)
 - https://github.com/entropy-zero/source-sdk-2013 (skill_changed game event)
 - https://github.com/Nbc66/source-sdk-2013-ce/tree/v142 (Base for VS2019 toolset support)
 
-//-------------------------------------------------------------------------------------------------------------------------
+---
 
 Valve Developer Community (VDC) sources:
 
@@ -218,7 +97,7 @@ interchangeable arms; this may change in the future)
 - https://developer.valvesoftware.com/wiki/Func_clip_vphysics ("Start Disabled" keyvalue fix)
 - https://developer.valvesoftware.com/wiki/Importing_CSS_Weapons_Into_HL2 (CS:S viewmodel chirality)
 
-//-------------------------------------------------------------------------------------------------------------------------
+---
 
 Direct contributions:
 
@@ -335,7 +214,7 @@ Direct contributions:
 =-- https://github.com/mapbase-source/source-sdk-2013/pull/264 (Outputs for vgui_screen)
 =-- https://github.com/mapbase-source/source-sdk-2013/pull/427 (CBaseCombatWeapon::WeaponClassFromString typo fix [committed by vizzys])
 
-//-------------------------------------------------------------------------------------------------------------------------
+---
 
 Other sources:
 
@@ -353,11 +232,11 @@ Other sources:
 - Vortigaunt LOS fix originally created by dky.tehkingd.u for HL2:CE
 - https://combineoverwiki.net/wiki/File:Combine_main_symbol.svg ("icon_combine" instructor icon in "materials/vgui/hud/gameinstructor_hl2_1"; This is asset-based and not reflected in the code)
 
-//-------------------------------------------------------------------------------------------------------------------------
+---
 
 If there is anything missing from this list, please contact Blixibon.
 
-//=========================================================================================================================
+---
 
 Aside from the content list above, Mapbase has more descriptive and up-to-date credits on this wiki article:
 https://github.com/mapbase-source/source-sdk-2013/wiki/Mapbase-Credits
@@ -366,57 +245,6 @@ Other relevant articles:
 * https://github.com/mapbase-source/source-sdk-2013/wiki/Mapbase-Disclaimers
 * https://github.com/mapbase-source/source-sdk-2013/wiki/Frequently-Asked-Questions-(FAQ)
 
-//-------------------------------------------------------------------------------------------------------------------------
+---
 
 In memory of Holly Liberatore (moofemp)
-
-//=========================================================================================================================
-
-Please see the Source SDK 2013 license below:
-
-
-
-               SOURCE 1 SDK LICENSE
-
-Source SDK Copyright(c) Valve Corp.  
-
-THIS DOCUMENT DESCRIBES A CONTRACT BETWEEN YOU AND VALVE 
-CORPORATION ("Valve").  PLEASE READ IT BEFORE DOWNLOADING OR USING 
-THE SOURCE ENGINE SDK ("SDK"). BY DOWNLOADING AND/OR USING THE 
-SOURCE ENGINE SDK YOU ACCEPT THIS LICENSE. IF YOU DO NOT AGREE TO 
-THE TERMS OF THIS LICENSE PLEASE DON’T DOWNLOAD OR USE THE SDK.  
-
-  You may, free of charge, download and use the SDK to develop a modified Valve game 
-running on the Source engine.  You may distribute your modified Valve game in source and 
-object code form, but only for free. Terms of use for Valve games are found in the Steam 
-Subscriber Agreement located here: http://store.steampowered.com/subscriber_agreement/ 
-
-  You may copy, modify, and distribute the SDK and any modifications you make to the 
-SDK in source and object code form, but only for free.  Any distribution of this SDK must 
-include this LICENSE file and thirdpartylegalnotices.txt.  
- 
-  Any distribution of the SDK or a substantial portion of the SDK must include the above 
-copyright notice and the following: 
-
-    DISCLAIMER OF WARRANTIES.  THE SOURCE SDK AND ANY 
-    OTHER MATERIAL DOWNLOADED BY LICENSEE IS PROVIDED 
-    "AS IS".  VALVE AND ITS SUPPLIERS DISCLAIM ALL 
-    WARRANTIES WITH RESPECT TO THE SDK, EITHER EXPRESS 
-    OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, IMPLIED 
-    WARRANTIES OF MERCHANTABILITY, NON-INFRINGEMENT, 
-    TITLE AND FITNESS FOR A PARTICULAR PURPOSE.  
-
-    LIMITATION OF LIABILITY.  IN NO EVENT SHALL VALVE OR 
-    ITS SUPPLIERS BE LIABLE FOR ANY SPECIAL, INCIDENTAL, 
-    INDIRECT, OR CONSEQUENTIAL DAMAGES WHATSOEVER 
-    (INCLUDING, WITHOUT LIMITATION, DAMAGES FOR LOSS OF 
-    BUSINESS PROFITS, BUSINESS INTERRUPTION, LOSS OF 
-    BUSINESS INFORMATION, OR ANY OTHER PECUNIARY LOSS) 
-    ARISING OUT OF THE USE OF OR INABILITY TO USE THE 
-    ENGINE AND/OR THE SDK, EVEN IF VALVE HAS BEEN 
-    ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.  
- 
-       
-If you would like to use the SDK for a commercial purpose, please contact Valve at 
-sourceengine@valvesoftware.com.
-

@@ -13,7 +13,8 @@ Revision SDK is the Source SDK 2013 Singleplayer branch behind the Entropy: Zero
 ```
 revision-sdk/
 |- LICENSE                        # Valve SOURCE 1 SDK License; free distribution only, ship it with thirdpartylegalnotices.txt
-|- README                         # Build instructions, Mapbase v8.0 notes, upstream attributions
+|- README.md                      # Short project overview, minimal build guide, links to docs/
+|- docs/                          # Split README content: building.md, entropy-zero.md, mapbase.md
 |- README_EXPANDED_STEAM.md       # Steamworks / Steam Input / Steam Deck integration notes
 |- CMakeLists.txt                 # Game selection and build groups
 |- build.ps1                      # Discovers VS, initializes x86 tools, configures and builds with Ninja
@@ -69,7 +70,7 @@ Run from the repository root with PowerShell 7. `build.ps1` finds VS and its bun
 - Keep x86: the engine ABI and vendored libraries are 32-bit. Static SDK libraries are rebuilt in the build tree, not over the vendored `.lib` files.
 - `phonemeextractor` and `qc_eyes` require obsolete toolsets/MFC and are not build targets. GamepadUI implementation is external; this repository builds only its existing game hooks.
 - `REVISION_BUILD_EXPANDED_STEAM` defaults to `OFF`; rebuilding needs matching updated Steamworks headers, `REVISION_STEAMWORKS_VERSION`, and the engine-side `bin/steam_api.dll`. See `README_EXPANDED_STEAM.md`.
-- `-Group shaders` / `everything` needs external Valve `shadercompile.exe` with its runtime DLLs and native Windows Perl. See `cmake/Shaders.cmake` and the README for cache paths.
+- `-Group shaders` / `everything` needs external Valve `shadercompile.exe` with its runtime DLLs and native Windows Perl. See `cmake/Shaders.cmake` and `docs/building.md` for cache paths.
 - Mod-specific code is isolated by preprocessor macros (`EZ`, `EZ1`, `EZ2`, `MAPBASE`); keep stock `hl2/` and `episodic/` paths intact when touching shared files.
 - This is a derivative of Source SDK 2013 / Mapbase v8.0. `LICENSE` allows free redistribution only and requires shipping `thirdpartylegalnotices.txt`; do not introduce GPL-like copyleft code.
 

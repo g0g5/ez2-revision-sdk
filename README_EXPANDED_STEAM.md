@@ -11,7 +11,7 @@ Currently, directly upgrading the Steam API requires replacing `steam_api.dll` i
 
 This project comes with an optional hack which uses DLL redirection to force the client/server DLLs to integrate a `steam_api.dll` adjacent to them in the mod's own `bin` folder rather than the engine's `bin` folder. However, this sometimes conflicts with the Steam API implemented by the rest of the engine and modules like Steam Input may not work correctly. There's also not an equivalent solution for native Linux.
 
-The instructions below assume a standalone Steam app on Windows. Build from the repository root with PowerShell 7 and `./build.ps1`; see [README](README) for the Windows x86 toolchain requirements. The default build is EZ2 Release. `REVISION_BUILD_EXPANDED_STEAM` defaults to `OFF` (use the vendored library rather than rebuilding it), and `REVISION_STEAMWORKS_VERSION` defaults to `1261`.
+The instructions below assume a standalone Steam app on Windows. Build from the repository root with PowerShell 7 and `./build.ps1`; see [docs/building.md](docs/building.md) for the Windows x86 toolchain requirements. The default build is EZ2 Release. `REVISION_BUILD_EXPANDED_STEAM` defaults to `OFF` (use the vendored library rather than rebuilding it), and `REVISION_STEAMWORKS_VERSION` defaults to `1261`.
 
 ---
 
