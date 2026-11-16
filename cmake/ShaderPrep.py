@@ -7,8 +7,7 @@ from pathlib import Path
 import re
 
 
-# The legacy Perl scripts treated shader sources as bytes. Latin-1 retains any
-# non-ASCII bytes in comments and default expressions when we copy them through.
+# Latin-1 preserves non-ASCII bytes in shader comments and default expressions.
 SOURCE_ENCODING = "latin-1"
 PROFILES = {
     "ps30": "ps_3_0",
@@ -54,7 +53,7 @@ class ShaderCombos:
 
 
 def expand_name(name: str, model: str) -> list[str]:
-    # These rules match LoadShaderListFile in Valve's valve_perl_helpers.pl.
+    # Keep the legacy Source shader naming rules for both output sets.
     if model == "30":
         for alias, profile in (
             ("_ps2x", "_ps30"), ("_ps20b", "_ps30"), ("_ps20", "_ps30"),
@@ -118,7 +117,7 @@ def read_combos(directory: Path, source: str, model: str) -> ShaderCombos:
         if profile_tag.search(line) and f"[{model}]" not in line.lower():
             continue
         default = DEFAULT.search(line)
-        # fxc_prep.pl removes the first bracketed annotation per line.
+        # Strip only the first bracketed annotation to preserve legacy combo parsing.
         line = TAG.sub("", line, count=1)
         declaration = COMBO.match(line)
         if declaration:

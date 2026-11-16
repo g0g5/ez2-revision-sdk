@@ -8,7 +8,6 @@
 *.cpp text
 *.nut text
 *.awk text
-*.pl text
 *.py text
 *.vcd text
 *.vbsp text

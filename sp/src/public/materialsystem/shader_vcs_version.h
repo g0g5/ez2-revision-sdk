@@ -30,7 +30,7 @@ struct ShaderHeader_t
 	uint32	m_nFlags;
 	uint32	m_nCentroidMask;
 	uint32	m_nNumStaticCombos;			// includes sentinal key
-	uint32	m_nSourceCRC32;				// NOTE: If you move this, update copyshaders.pl, *_prep.pl, updateshaders.pl
+	uint32	m_nSourceCRC32;				// Keep this field at its on-disk offset.
 };
 #pragma pack()
 
@@ -43,7 +43,7 @@ struct ShaderHeader_t_v4				// still used for assembly shaders
 	uint32	m_nFlags;
 	uint32	m_nCentroidMask;
 	uint32	m_nDiffReferenceSize;
-	uint32	m_nSourceCRC32;				// NOTE: If you move this, update copyshaders.pl, *_prep.pl, updateshaders.pl
+	uint32	m_nSourceCRC32;				// Keep this field at its on-disk offset.
 };
 #pragma pack()
 

@@ -29,7 +29,7 @@ revision-sdk/
    |  |- mod_ez2/                 # EZ2 DLL/PDB output only; gameinfo and content are not committed
    |  \- ep2/ episodic/ hl2/ lostcoast/   # Stock HL2 content targets
    \- src/                        # All engine, game and tool source code
-      |- devtools/bin/            # Valve Perl shader helpers
+      |- devtools/bin/            # DirectX runtime used by the shader compiler
       |- public/                  # Shared SDK headers and implementations: entities, networking, BSP, math
       |- tier0/ tier1/ vstdlib/ common/ mathlib/ raytrace/   # Engine support libraries shared by everything
       |- game/
