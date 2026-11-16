@@ -1,0 +1,15 @@
+set(revision_sources
+    "${REVISION_SRC}/thirdparty/discord-rpc/include/discord_rpc.h"
+    "${REVISION_SRC}/thirdparty/discord-rpc/include/discord_register.h"
+    "${REVISION_SRC}/thirdparty/discord-rpc/src/backoff.h"
+    "${REVISION_SRC}/thirdparty/discord-rpc/src/connection.h"
+    "${REVISION_SRC}/thirdparty/discord-rpc/src/connection_win.cpp"
+    "${REVISION_SRC}/thirdparty/discord-rpc/src/discord_register_win.cpp"
+    "${REVISION_SRC}/thirdparty/discord-rpc/src/discord_rpc.cpp"
+    "${REVISION_SRC}/thirdparty/discord-rpc/src/dllmain.cpp"
+    "${REVISION_SRC}/thirdparty/discord-rpc/src/msg_queue.h"
+    "${REVISION_SRC}/thirdparty/discord-rpc/src/rpc_connection.cpp"
+    "${REVISION_SRC}/thirdparty/discord-rpc/src/rpc_connection.h"
+    "${REVISION_SRC}/thirdparty/discord-rpc/src/serialization.cpp"
+    "${REVISION_SRC}/thirdparty/discord-rpc/src/serialization.h"
+)

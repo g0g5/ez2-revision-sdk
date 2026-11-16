@@ -33,6 +33,7 @@ client.lib
 server.pdb
 server.dll
 server.lib
+sp/game/mod_*/bin/discord-rpc.dll
 
 client.so
 client.so.dbg

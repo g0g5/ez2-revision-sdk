@@ -81,6 +81,26 @@ linked files. To install an E:Z mod, copy its complete mod directory, including
 the published bin files and required game content, to Steam/SteamApps/sourcemods.
 The EZ2 content directory must be supplied separately.
 
+### Discord RPC runtime
+
+All four game clients dynamically link `discord-rpc.dll`, built from the pinned
+Discord RPC v3.4.0 sources in `sp/src/thirdparty/discord-rpc/`. Its RapidJSON 1.1.0
+headers are vendored in `sp/src/thirdparty/rapidjson/`; neither dependency requires
+a build-time download. Provenance and archive hashes are recorded in each
+`README.revision.md`.
+
+Building a client also builds the matching Windows x86 DLL and publishes it and
+its PDB alongside `client.dll` in `sp/game/mod_<game>/bin/`. Publishing runs even
+when the linker has no work, so rebuilding the client restores a missing runtime
+DLL. Copy `discord-rpc.dll` with the client when installing a mod; the prebuilt
+`sp/src/lib/public/discord-rpc.lib` is superseded by the source-built import
+library. Distribute `thirdpartylegalnotices-discord-rpc.txt` with these binaries,
+in addition to the SDK's `LICENSE` and `thirdpartylegalnotices.txt`.
+
+The library uses its own C++14 and exception options, leaving the game's settings
+unchanged. The upstream I/O thread remains enabled. The upstream library is
+deprecated; its pinned C API and dynamic linking match the existing integration.
+
 ### Windows x86 SDK libraries
 
 CMake uses libraries supplied under `sp/src/lib/public` and `sp/src/lib/common`.

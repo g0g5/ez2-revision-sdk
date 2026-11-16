@@ -10,7 +10,6 @@ set(revision_library_url "https://raw.githubusercontent.com/entropy-zero/source-
 set(revision_prebuilt_appframework   public 4bc7d93c3dac5e3d161d5da6ee925f6499df955cce7142a838adfb14be2e7b30)
 set(revision_prebuilt_bitmap         public 64678a05c4e813808bd6640f7309c1e265aef7509b665556aa554713911d341e)
 set(revision_prebuilt_choreoobjects  public e2f941a994d2b1336f89d73b3541c6066e59a64ec7de02db90ae72e2600d2d1b)
-set(revision_prebuilt_discord-rpc    public 75504d8424b2e2ed85c3e5a379f2544fb5d0048219cc8f1ae1594ae661cc3640)
 set(revision_prebuilt_dmxloader      public a2ddf2c79e40291cb89c783a44d9256303a7bfecb2d8c4f5051042f562885cdb)
 set(revision_prebuilt_expanded_steam public f384afed8cf9fd878753e791fc65c57ae90ff9618c83fed4199a941928dd1c04)
 set(revision_prebuilt_jpeglib        common 8989d7693fde8388090d7b3316d618801778a59a9739a7812ed81277a83ca2bb)

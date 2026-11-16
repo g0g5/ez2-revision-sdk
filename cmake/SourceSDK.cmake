@@ -91,7 +91,7 @@ function(revision_add_target name type)
 endfunction()
 
 function(revision_add_runtime_target name type destination)
-    cmake_parse_arguments(PARSE_ARGV 3 runtime "" "OUTPUT_NAME" "")
+    cmake_parse_arguments(PARSE_ARGV 3 runtime "" "OUTPUT_NAME" "RUNTIME_DEPENDENCIES")
     if(NOT DEFINED runtime_OUTPUT_NAME)
         set(runtime_OUTPUT_NAME "${name}")
     endif()
@@ -110,13 +110,25 @@ function(revision_add_runtime_target name type destination)
         BYPRODUCTS "${staging}/${runtime_OUTPUT_NAME}.pdb"
         COMMAND "${CMAKE_COMMAND}" -E true
         VERBATIM)
+    # Publish dependencies even when Ninja reuses the linked client. A POST_BUILD
+    # copy on the dependency alone would miss other mods and deleted output files.
+    set(publish_dependencies)
+    foreach(dependency IN LISTS runtime_RUNTIME_DEPENDENCIES)
+        list(APPEND publish_dependencies
+            COMMAND "${CMAKE_COMMAND}"
+                "-DBINARY=$<TARGET_FILE:${dependency}>" "-DPDB=$<TARGET_PDB_FILE:${dependency}>"
+                "-DDESTINATION=${destination}"
+                "-DLOCK=${REVISION_ROOT}/build/publish-locks/${name}-${dependency}.lock"
+                -P "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/PublishRuntime.cmake")
+    endforeach()
     # Each requested build publishes its artifacts, including an incremental no-op link.
     add_custom_target(${name}
+        ${publish_dependencies}
         COMMAND "${CMAKE_COMMAND}"
             "-DBINARY=$<TARGET_FILE:${binary}>" "-DPDB=$<TARGET_PDB_FILE:${binary}>"
             "-DDESTINATION=${destination}" "-DLOCK=${REVISION_ROOT}/build/publish-locks/${name}.lock"
             -P "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/PublishRuntime.cmake"
-        DEPENDS ${binary}
+        DEPENDS ${binary} ${runtime_RUNTIME_DEPENDENCIES}
         COMMENT "Publish ${name} (${CMAKE_BUILD_TYPE})"
         VERBATIM)
 endfunction()
