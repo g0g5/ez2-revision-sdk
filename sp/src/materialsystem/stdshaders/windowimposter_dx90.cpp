@@ -4,17 +4,29 @@
 //
 //=============================================================================//
 
+#ifdef REVISION_LUX
+#include "lux_compat.h"
+#include "tier1/convar.h"
+#else
 #include "BaseVSShader.h"
+#endif
 #include "cpp_shader_constant_register_map.h"
 
 #include "SDK_windowimposter_vs20.inc"
+#ifndef REVISION_LUX
 #include "SDK_windowimposter_ps20.inc"
+#endif
 #include "SDK_windowimposter_ps20b.inc"
 
 
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+
+#ifdef REVISION_LUX
+static ConVar mat_specular_disable_on_missing( "mat_specular_disable_on_missing", "1", FCVAR_ARCHIVE,
+	"Disables specular reflections on a material when the envmap cannot be found." );
+#endif
 
 DEFINE_FALLBACK_SHADER( sdk_windowimposter, sdk_windowimposter_DX90 )
 
@@ -89,18 +101,22 @@ BEGIN_VS_SHADER( sdk_windowimposter_DX90,
 				SET_STATIC_VERTEX_SHADER_COMBO( PARALLAXCORRECT, hasParallaxCorrection ); // Parallax cubemaps enabled for 2_0b and onwards
 			SET_STATIC_VERTEX_SHADER( sdk_windowimposter_vs20 );
 
+#ifndef REVISION_LUX
 			if( g_pHardwareConfig->SupportsPixelShaders_2_b() )
+#endif
 			{
 				DECLARE_STATIC_PIXEL_SHADER( sdk_windowimposter_ps20b );
 					SET_STATIC_PIXEL_SHADER_COMBO( PARALLAXCORRECT, hasParallaxCorrection ); // Parallax cubemaps enabled for 2_0b and onwards
 				SET_STATIC_PIXEL_SHADER( sdk_windowimposter_ps20b );
 			}
+#ifndef REVISION_LUX
 			else
 			{
 				DECLARE_STATIC_PIXEL_SHADER( sdk_windowimposter_ps20 );
 					SET_STATIC_PIXEL_SHADER_COMBO( PARALLAXCORRECT, 0 ); // No parallax cubemaps with ps_2_0 :(
 				SET_STATIC_PIXEL_SHADER( sdk_windowimposter_ps20 );
 			}
+#endif
 
 			unsigned int flags = VERTEX_POSITION;
 			int nTexCoordCount = 2;
@@ -123,18 +139,22 @@ BEGIN_VS_SHADER( sdk_windowimposter_DX90,
 				SET_DYNAMIC_VERTEX_SHADER_COMBO( DOWATERFOG, pShaderAPI->GetSceneFogMode() == MATERIAL_FOG_LINEAR_BELOW_FOG_Z );
 			SET_DYNAMIC_VERTEX_SHADER( sdk_windowimposter_vs20 );
 
+#ifndef REVISION_LUX
 			if( g_pHardwareConfig->SupportsPixelShaders_2_b() )
+#endif
 			{
 				DECLARE_DYNAMIC_PIXEL_SHADER( sdk_windowimposter_ps20b );
 					SET_DYNAMIC_PIXEL_SHADER_COMBO( PIXELFOGTYPE, pShaderAPI->GetPixelFogCombo() );
 				SET_DYNAMIC_PIXEL_SHADER( sdk_windowimposter_ps20b );
 			}
+#ifndef REVISION_LUX
 			else
 			{
 				DECLARE_DYNAMIC_PIXEL_SHADER( sdk_windowimposter_ps20 );
 					SET_DYNAMIC_PIXEL_SHADER_COMBO( PIXELFOGTYPE, pShaderAPI->GetPixelFogCombo() );
 				SET_DYNAMIC_PIXEL_SHADER( sdk_windowimposter_ps20 );
 			}
+#endif
 
 			SetModulationVertexShaderDynamicState();
 

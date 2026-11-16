@@ -1,0 +1,3 @@
+// The SM3 depth pass supports hardware morphing.
+SDK_depthwrite_ps2x.fxc
+SDK_depthwrite_vs20.fxc

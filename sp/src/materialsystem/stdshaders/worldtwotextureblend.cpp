@@ -6,12 +6,18 @@
 // $NoKeywords: $
 //===========================================================================//
 
+#ifdef REVISION_LUX
+#include "lux_compat.h"
+#else
 #include "BaseVSShader.h"
+#endif
 
 #include "convar.h"
 
 #include "SDK_lightmappedgeneric_vs20.inc"
+#ifndef REVISION_LUX
 #include "SDK_worldtwotextureblend_ps20.inc"
+#endif
 #include "SDK_worldtwotextureblend_ps20b.inc"
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -264,7 +270,9 @@ END_SHADER_PARAMS
 #endif
 			SET_STATIC_VERTEX_SHADER( sdk_lightmappedgeneric_vs20 );
 
+#ifndef REVISION_LUX
 			if ( g_pHardwareConfig->SupportsPixelShaders_2_b() )
+#endif
 			{
 				DECLARE_STATIC_PIXEL_SHADER( sdk_worldtwotextureblend_ps20b );
 				SET_STATIC_PIXEL_SHADER_COMBO( DETAILTEXTURE,  hasDetailTexture );
@@ -278,6 +286,7 @@ END_SHADER_PARAMS
 				SET_STATIC_PIXEL_SHADER_COMBO( FLASHLIGHTDEPTHFILTERMODE, nShadowFilterMode );
 				SET_STATIC_PIXEL_SHADER( sdk_worldtwotextureblend_ps20b );
 			}
+#ifndef REVISION_LUX
 			else
 			{
 				DECLARE_STATIC_PIXEL_SHADER( sdk_worldtwotextureblend_ps20 );
@@ -291,6 +300,7 @@ END_SHADER_PARAMS
 				SET_STATIC_PIXEL_SHADER_COMBO( SEAMLESS,  bSeamlessMapping );
 				SET_STATIC_PIXEL_SHADER( sdk_worldtwotextureblend_ps20 );
 			}
+#endif
 
 			// HACK HACK HACK - enable alpha writes all the time so that we have them for
 			// underwater stuff. 
@@ -331,7 +341,11 @@ END_SHADER_PARAMS
 				FlashlightState_t state = pShaderAPI->GetFlashlightStateEx( worldToTexture, &pFlashlightDepthTexture );
 				bFlashlightShadows = state.m_bEnableShadows && ( pFlashlightDepthTexture != NULL );
 
+#ifdef REVISION_LUX
+				SetFlashLightColorFromState( state, 28 ); // Legacy HLSL uses c28.
+#else
 				SetFlashLightColorFromState( state, pShaderAPI );
+#endif
 
 				BindTexture( SHADER_SAMPLER2, state.m_pSpotlightTexture, state.m_nSpotlightTextureFrame );
 
@@ -379,7 +393,7 @@ END_SHADER_PARAMS
 			if( !( bVertexShaderFastPath && color[0] == 1.0f && color[1] == 1.0f && color[2] == 1.0f && color[3] == 1.0f ) )
 			{
 				bVertexShaderFastPath = false;
-				s_pShaderAPI->SetVertexShaderConstant( VERTEX_SHADER_MODULATION_COLOR, color );
+				pShaderAPI->SetVertexShaderConstant( VERTEX_SHADER_MODULATION_COLOR, color );
 				if (! bSeamlessMapping)
 					SetVertexShaderTextureTransform( VERTEX_SHADER_SHADER_SPECIFIC_CONST_0, BASETEXTURETRANSFORM );
 				if( hasBump && !bHasDetailAlpha )
@@ -413,7 +427,9 @@ END_SHADER_PARAMS
 			}
 
 
+#ifndef REVISION_LUX
 			if ( g_pHardwareConfig->SupportsPixelShaders_2_b() )
+#endif
 			{
 				DECLARE_DYNAMIC_PIXEL_SHADER( sdk_worldtwotextureblend_ps20b );
 
@@ -424,6 +440,7 @@ END_SHADER_PARAMS
 				SET_DYNAMIC_PIXEL_SHADER_COMBO( FLASHLIGHTSHADOWS, bFlashlightShadows );
 				SET_DYNAMIC_PIXEL_SHADER( sdk_worldtwotextureblend_ps20b );
 			}
+#ifndef REVISION_LUX
 			else
 			{
 				DECLARE_DYNAMIC_PIXEL_SHADER( sdk_worldtwotextureblend_ps20 );
@@ -434,6 +451,7 @@ END_SHADER_PARAMS
 				SET_DYNAMIC_PIXEL_SHADER_COMBO( PIXELFOGTYPE, pShaderAPI->GetPixelFogCombo() );
 				SET_DYNAMIC_PIXEL_SHADER( sdk_worldtwotextureblend_ps20 );
 			}
+#endif
 
 
 			// always set the transform for detail textures since I'm assuming that you'll
@@ -489,7 +507,11 @@ END_SHADER_PARAMS
 	{
 		//ConVarRef r_flashlight_version2 = ConVarRef( "r_flashlight_version2" );
 
+#ifdef REVISION_LUX
+		bool bHasFlashlight = UsingFlashlight();
+#else
 		bool bHasFlashlight = UsingFlashlight( params );
+#endif
 		if ( bHasFlashlight /*&& ( IsX360() || r_flashlight_version2.GetInt() )*/ )
 		{
 			DrawPass( params, pShaderAPI, pShaderShadow, false, vertexCompression );

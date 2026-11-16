@@ -6,11 +6,17 @@
 // $NoKeywords: $
 //===========================================================================//
 
+#ifdef REVISION_LUX
+#include "lux_compat.h"
+#else
 #include "BaseVSShader.h"
+#endif
 #include "shaderlib/cshader.h"
 
 #include "SDK_eyeglint_vs20.inc"
+#ifndef REVISION_LUX
 #include "SDK_eyeglint_ps20.inc"
+#endif
 #include "SDK_eyeglint_ps20b.inc"
 
 DEFINE_FALLBACK_SHADER( SDK_EyeGlint, SDK_EyeGlint_dx9 )
@@ -51,7 +57,20 @@ SHADER_DRAW
 		DECLARE_STATIC_VERTEX_SHADER( sdk_eyeglint_vs20 );
 		SET_STATIC_VERTEX_SHADER( sdk_eyeglint_vs20 );
 
-		SET_STATIC_PS2X_PIXEL_SHADER_NO_COMBOS( sdk_eyeglint );
+#ifndef REVISION_LUX
+		if ( g_pHardwareConfig->SupportsPixelShaders_2_b() )
+#endif
+		{
+			DECLARE_STATIC_PIXEL_SHADER( sdk_eyeglint_ps20b );
+			SET_STATIC_PIXEL_SHADER( sdk_eyeglint_ps20b );
+		}
+#ifndef REVISION_LUX
+		else
+		{
+			DECLARE_STATIC_PIXEL_SHADER( sdk_eyeglint_ps20 );
+			SET_STATIC_PIXEL_SHADER( sdk_eyeglint_ps20 );
+		}
+#endif
 	}
 
 	DYNAMIC_STATE
@@ -59,7 +78,20 @@ SHADER_DRAW
 		DECLARE_DYNAMIC_VERTEX_SHADER( sdk_eyeglint_vs20 );
 		SET_DYNAMIC_VERTEX_SHADER( sdk_eyeglint_vs20 );
 
-		SET_DYNAMIC_PS2X_PIXEL_SHADER_NO_COMBOS( sdk_eyeglint );
+#ifndef REVISION_LUX
+		if ( g_pHardwareConfig->SupportsPixelShaders_2_b() )
+#endif
+		{
+			DECLARE_DYNAMIC_PIXEL_SHADER( sdk_eyeglint_ps20b );
+			SET_DYNAMIC_PIXEL_SHADER( sdk_eyeglint_ps20b );
+		}
+#ifndef REVISION_LUX
+		else
+		{
+			DECLARE_DYNAMIC_PIXEL_SHADER( sdk_eyeglint_ps20 );
+			SET_DYNAMIC_PIXEL_SHADER( sdk_eyeglint_ps20 );
+		}
+#endif
 	}
 	Draw();
 }

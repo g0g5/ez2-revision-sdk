@@ -14,6 +14,7 @@ list(APPEND revision_sources
     "${REVISION_SRC}/game/client/ez2/c_grenade_energy.cpp"
     "${REVISION_SRC}/game/client/ez2/zombiegooproxy.cpp"
     "${REVISION_SRC}/game/client/ez2/hud_slamstatus.cpp"
+    "${REVISION_SRC}/game/client/ez2/lux_shader_caps.cpp"
     "${REVISION_SRC}/game/client/ezu/hud_healthvialstatus.cpp"
     "${REVISION_SRC}/game/client/workshop_publish.cpp"
     "${REVISION_SRC}/game/shared/workshop_mount.cpp"

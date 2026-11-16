@@ -6,9 +6,15 @@
 // $NoKeywords: $
 //=============================================================================//
 
+#ifdef REVISION_LUX
+#include "lux_compat.h"
+#else
 #include "BaseVSShader.h"
+#endif
 
+#ifndef REVISION_LUX
 #include "SDK_depthwrite_ps20.inc"
+#endif
 #include "SDK_depthwrite_ps20b.inc"
 #include "SDK_depthwrite_vs20.inc"
 
@@ -64,8 +70,8 @@ BEGIN_VS_SHADER_FLAGS( SDK_DepthWrite, "Help for Depth Write", SHADER_NOT_EDITAB
 	SHADER_DRAW
 	{
 		bool bAlphaClip = IS_FLAG_SET( MATERIAL_VAR_ALPHATEST );
-		int nColorDepth = GetIntParam( COLOR_DEPTH, params, 0 );
-		int nTreeSwayMode = clamp( GetIntParam( TREESWAY, params, 0 ), 0, 2 );
+		int nColorDepth = params[COLOR_DEPTH]->GetIntValue();
+		int nTreeSwayMode = clamp( params[TREESWAY]->GetIntValue(), 0, 2 );
 
 		SHADOW_STATE
 		{
@@ -110,18 +116,22 @@ BEGIN_VS_SHADER_FLAGS( SDK_DepthWrite, "Help for Depth Write", SHADER_NOT_EDITAB
 						pShaderShadow->EnableSRGBRead( SHADER_SAMPLER0, true );
 					}
 
+#ifndef REVISION_LUX
 					if( g_pHardwareConfig->SupportsPixelShaders_2_b() )
+#endif
 					{
 						DECLARE_STATIC_PIXEL_SHADER( sdk_depthwrite_ps20b );
 						SET_STATIC_PIXEL_SHADER_COMBO( COLOR_DEPTH, nColorDepth );
 						SET_STATIC_PIXEL_SHADER( sdk_depthwrite_ps20b );
 					}
+#ifndef REVISION_LUX
 					else
 					{
 						DECLARE_STATIC_PIXEL_SHADER( sdk_depthwrite_ps20 );
 						SET_STATIC_PIXEL_SHADER_COMBO( COLOR_DEPTH, nColorDepth );
 						SET_STATIC_PIXEL_SHADER( sdk_depthwrite_ps20 );
 					}
+#endif
 				}
 			}
 #ifndef _X360
@@ -169,18 +179,22 @@ BEGIN_VS_SHADER_FLAGS( SDK_DepthWrite, "Help for Depth Write", SHADER_NOT_EDITAB
 					pShaderAPI->SetPixelShaderConstant( 0, vAlphaThreshold, 1 );
 				}
 
+#ifndef REVISION_LUX
 				if( g_pHardwareConfig->SupportsPixelShaders_2_b() )
+#endif
 				{
 					DECLARE_DYNAMIC_PIXEL_SHADER( sdk_depthwrite_ps20b );
 					SET_DYNAMIC_PIXEL_SHADER_COMBO( ALPHACLIP, bAlphaClip );
 					SET_DYNAMIC_PIXEL_SHADER( sdk_depthwrite_ps20b );
 				}
+#ifndef REVISION_LUX
 				else
 				{
 					DECLARE_DYNAMIC_PIXEL_SHADER( sdk_depthwrite_ps20 );
 					SET_DYNAMIC_PIXEL_SHADER_COMBO( ALPHACLIP, bAlphaClip );
 					SET_DYNAMIC_PIXEL_SHADER( sdk_depthwrite_ps20 );
 				}
+#endif
 			}
 #ifndef _X360
 			else // 3.0 shader case (PC only)
@@ -231,26 +245,26 @@ BEGIN_VS_SHADER_FLAGS( SDK_DepthWrite, "Help for Depth Write", SHADER_NOT_EDITAB
 				flParams[3] = 0.0f;
 				pShaderAPI->SetVertexShaderConstant( VERTEX_SHADER_SHADER_SPECIFIC_CONST_2, flParams );
 
-				flParams[0] = GetFloatParam( TREESWAYSCRUMBLEFALLOFFEXP, params, 1.0f );
-				flParams[1] = GetFloatParam( TREESWAYFALLOFFEXP, params, 1.0f );
-				flParams[2] = GetFloatParam( TREESWAYSCRUMBLESPEED, params, 3.0f );
-				flParams[3] = GetFloatParam( TREESWAYSPEEDHIGHWINDMULTIPLIER, params, 2.0f );
+				flParams[0] = params[TREESWAYSCRUMBLEFALLOFFEXP]->GetFloatValue();
+				flParams[1] = params[TREESWAYFALLOFFEXP]->GetFloatValue();
+				flParams[2] = params[TREESWAYSCRUMBLESPEED]->GetFloatValue();
+				flParams[3] = params[TREESWAYSPEEDHIGHWINDMULTIPLIER]->GetFloatValue();
 				pShaderAPI->SetVertexShaderConstant( VERTEX_SHADER_SHADER_SPECIFIC_CONST_3, flParams );
 
-				flParams[0] = GetFloatParam( TREESWAYHEIGHT, params, 1000.0f );
-				flParams[1] = GetFloatParam( TREESWAYSTARTHEIGHT, params, 0.1f );
-				flParams[2] = GetFloatParam( TREESWAYRADIUS, params, 300.0f );
-				flParams[3] = GetFloatParam( TREESWAYSTARTRADIUS, params, 0.2f );
+				flParams[0] = params[TREESWAYHEIGHT]->GetFloatValue();
+				flParams[1] = params[TREESWAYSTARTHEIGHT]->GetFloatValue();
+				flParams[2] = params[TREESWAYRADIUS]->GetFloatValue();
+				flParams[3] = params[TREESWAYSTARTRADIUS]->GetFloatValue();
 				pShaderAPI->SetVertexShaderConstant( VERTEX_SHADER_SHADER_SPECIFIC_CONST_4, flParams );
 
-				flParams[0] = GetFloatParam( TREESWAYSPEED, params, 1.0f );
-				flParams[1] = GetFloatParam( TREESWAYSTRENGTH, params, 10.0f );
-				flParams[2] = GetFloatParam( TREESWAYSCRUMBLEFREQUENCY, params, 12.0f );
-				flParams[3] = GetFloatParam( TREESWAYSCRUMBLESTRENGTH, params, 10.0f );
+				flParams[0] = params[TREESWAYSPEED]->GetFloatValue();
+				flParams[1] = params[TREESWAYSTRENGTH]->GetFloatValue();
+				flParams[2] = params[TREESWAYSCRUMBLEFREQUENCY]->GetFloatValue();
+				flParams[3] = params[TREESWAYSCRUMBLESTRENGTH]->GetFloatValue();
 				pShaderAPI->SetVertexShaderConstant( VERTEX_SHADER_SHADER_SPECIFIC_CONST_5, flParams );
 
-				flParams[0] = GetFloatParam( TREESWAYSPEEDLERPSTART, params, 3.0f );
-				flParams[1] = GetFloatParam( TREESWAYSPEEDLERPEND, params, 6.0f );
+				flParams[0] = params[TREESWAYSPEEDLERPSTART]->GetFloatValue();
+				flParams[1] = params[TREESWAYSPEEDLERPEND]->GetFloatValue();
 				flParams[2] = 0.0f;
 				flParams[3] = 0.0f;
 				pShaderAPI->SetVertexShaderConstant( VERTEX_SHADER_SHADER_SPECIFIC_CONST_9, flParams );
@@ -264,7 +278,7 @@ BEGIN_VS_SHADER_FLAGS( SDK_DepthWrite, "Help for Depth Write", SHADER_NOT_EDITAB
 			vParms.y = 4000.0f;		// arbitrary far 
 			vParms.z = 0.0f;
 			vParms.w = 0.0f;
-			pShaderAPI->SetPixelShaderConstant( 1, vParms.Base(), 2 );
+			pShaderAPI->SetPixelShaderConstant( 1, vParms.Base(), 1 );
 
 		}	// DYNAMIC_STATE
 

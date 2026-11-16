@@ -545,7 +545,13 @@ void CRopeManager::DrawRenderCache_NonQueued( bool bShadowDepth, RopeRenderData_
 			IMaterial *pMaterial = bShadowDepth ? g_pSplineCableShadowdepth : pRenderCache[iRenderCache].m_pSolidMaterial;
 
 			// Need to make sure that all rope materials use the splinerope shader since there are a lot of assumptions about how the shader interfaces with this code.
+#ifdef EZ2
+			const char *pShaderName = pMaterial->GetShaderName();
+			AssertOnce( V_strstr( pShaderName, "SDK_Cable" ) != NULL ||
+				!V_stricmp( pShaderName, "LUX_Cable_Spline" ) );
+#else
 			AssertOnce( V_strstr( pMaterial->GetShaderName(), "SDK_Cable" ) != NULL ); // splinerope
+#endif
 
 			pRenderContext->Bind( pMaterial );
 

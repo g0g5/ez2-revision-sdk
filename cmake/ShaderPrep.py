@@ -1,4 +1,4 @@
-"""Generate the PC FXC worklist and C++ combo headers for the CMake shader build."""
+"""Read shader lists and prepare worklists for the legacy Valve compiler."""
 
 import argparse
 from dataclasses import dataclass
@@ -67,8 +67,7 @@ def expand_name(name: str, model: str) -> list[str]:
     return [name]
 
 
-def load_shader_list(shader_list: Path, model: str) -> list[tuple[str, str]]:
-    selected = {}
+def shader_sources(shader_list: Path):
     for number, line in enumerate(shader_list.read_text(encoding=SOURCE_ENCODING).splitlines(), 1):
         source = line.partition("//")[0].strip()
         if not source:
@@ -77,6 +76,12 @@ def load_shader_list(shader_list: Path, model: str) -> list[tuple[str, str]]:
             raise ValueError(f"{shader_list}:{number}: expected an FXC shader filename, got {source}")
         if not (shader_list.parent / source).is_file():
             raise ValueError(f"{shader_list}:{number}: shader source is missing: {source}")
+        yield source
+
+
+def load_shader_list(shader_list: Path, model: str) -> list[tuple[str, str]]:
+    selected = {}
+    for source in shader_sources(shader_list):
         for name in expand_name(Path(source).stem, model):
             key = name.lower()
             old_source, _ = selected.get(key, ("", ""))
@@ -87,6 +92,20 @@ def load_shader_list(shader_list: Path, model: str) -> list[tuple[str, str]]:
     if not selected:
         raise ValueError(f"{shader_list}: shader list is empty")
     return list(selected.values())
+
+
+def load_lux_shader_list(shader_list: Path, model: str) -> list[tuple[str, str]]:
+    entries = []
+    for source in shader_sources(shader_list):
+        # ShaderCompile2 selects the output profile from -ver and the stage
+        # from the input name. In particular, vertex shaders never use vs20b.
+        match = re.fullmatch(r"(\w+)_([pv]s)(?:20b|20|2x|30)\.fxc", source)
+        if not match:
+            raise ValueError(f"{shader_list}: ShaderCompile2 needs a profile suffix: {source}")
+        name, stage = match.groups()
+        version = "20" if stage == "vs" and model == "20b" else model
+        entries.append((source, f"{name}_{stage}{version}"))
+    return entries
 
 
 def shader_lines(directory: Path, source: str, stack: tuple[Path, ...] = ()):
@@ -257,14 +276,17 @@ def prepare(directory: Path, entries: list[tuple[str, str]]) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=("list", "prepare"))
+    parser.add_argument("mode", choices=("list", "prepare", "lux-list"))
     parser.add_argument("shader_list", type=Path)
     parser.add_argument("model", choices=("20b", "30"))
     args = parser.parse_args()
     try:
         shader_list = args.shader_list.resolve()
-        entries = load_shader_list(shader_list, args.model)
-        if args.mode == "list":
+        if args.mode == "lux-list":
+            entries = load_lux_shader_list(shader_list, args.model)
+        else:
+            entries = load_shader_list(shader_list, args.model)
+        if args.mode != "prepare":
             for source, name in entries:
                 print(f"{source}-----{name}")
         else:

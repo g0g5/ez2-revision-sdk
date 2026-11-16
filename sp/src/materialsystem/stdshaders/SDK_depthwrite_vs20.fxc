@@ -17,7 +17,11 @@ static const bool g_bSkinning = SKINNING ? true : false;
 const float3 cMorphTargetTextureDim			: register( SHADER_SPECIFIC_CONST_6 );
 const float4 cMorphSubrect					: register( SHADER_SPECIFIC_CONST_7 );
 
+#ifdef _X360
 sampler2D morphSampler : register( D3DVERTEXTEXTURESAMPLER0, s0 );
+#else
+sampler2D morphSampler : register( s0 );
+#endif
 #endif
 
 #if ( TREESWAY )

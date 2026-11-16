@@ -82,7 +82,7 @@ set_target_properties(glview_binary PROPERTIES WIN32_EXECUTABLE TRUE)
 revision_add_runtime_target(serverplugin_empty SHARED "${runtime_directory}")
 add_dependencies(tools serverplugin_empty maptools)
 
-# Shader generation is opt-in: it needs Valve's separately supplied shader compiler.
+# Shader generation is opt-in and selects the compiler for each game target.
 if(REVISION_BUILD_GROUP MATCHES "^(shaders|everything)$")
     include(cmake/Shaders.cmake)
     foreach(game IN LISTS REVISION_GAMES)

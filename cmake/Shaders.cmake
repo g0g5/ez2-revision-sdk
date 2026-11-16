@@ -1,4 +1,5 @@
 include_guard(GLOBAL)
+include("${CMAKE_CURRENT_LIST_DIR}/LuxShaders.cmake")
 
 # Include is inert. Call revision_add_shaders(game) only for the shaders/everything
 # selection: missing external tools deliberately fail that selection at configure
@@ -150,17 +151,15 @@ function(revision_add_shaders game)
     if(TARGET shaders_${_game})
         return()
     endif()
+    if(_game STREQUAL "ez2")
+        revision_add_lux_shaders()
+        return()
+    endif()
     set(_game_dir "${REVISION_ROOT}/sp/game/mod_${_game}")
-    # EZ2's content directory is not committed. The common bytecode compiler can
-    # use either committed Mapbase gameinfo; publishing still targets mod_ez2.
-    set(_compiler_game "${_game_dir}")
-    if(NOT EXISTS "${_compiler_game}/gameinfo.txt")
-        set(_compiler_game "${REVISION_ROOT}/sp/game/mod_hl2")
+    if(NOT EXISTS "${_game_dir}/gameinfo.txt")
+        message(FATAL_ERROR "Shader compilation needs ${_game_dir}/gameinfo.txt")
     endif()
-    if(NOT EXISTS "${_compiler_game}/gameinfo.txt")
-        message(FATAL_ERROR "Shader compilation needs ${_compiler_game}/gameinfo.txt")
-    endif()
-    _revision_shader_pipeline("${_compiler_game}")
+    _revision_shader_pipeline("${_game_dir}")
     get_property(_base GLOBAL PROPERTY REVISION_SHADER_GENERATED_BASE)
     get_property(_vcs GLOBAL PROPERTY REVISION_SHADER_VCS_FILES)
     set(_shader_dir "${REVISION_SRC}/materialsystem/stdshaders")
@@ -205,18 +204,27 @@ function(revision_add_shaders game)
     # inc files not in the FXC collections intentionally fall back to the
     # committed fxctmp9/vshtmp9 directories; regenerated files take precedence.
     add_dependencies(${_target} revision_shader_headers)
+    revision_publish_shaders(${_game} "${_game_dir}" ${_vcs})
+endfunction()
+
+function(revision_publish_shaders _game _game_dir)
     set(_published)
-    foreach(_file IN LISTS _vcs)
+    set(_linked_binary)
+    if(TARGET game_shader_dx9_${_game}_binary)
+        set(_linked_binary game_shader_dx9_${_game}_binary)
+    endif()
+    foreach(_file IN LISTS ARGN)
         get_filename_component(_name "${_file}" NAME)
         set(_output "${_game_dir}/shaders/fxc/${_name}")
         add_custom_command(OUTPUT "${_output}"
             COMMAND "${CMAKE_COMMAND}" -E make_directory "${_game_dir}/shaders/fxc"
             COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${_file}" "${_output}"
-            DEPENDS "${_file}" VERBATIM)
+            DEPENDS "${_file}" ${_linked_binary} VERBATIM)
         list(APPEND _published "${_output}")
     endforeach()
-    add_custom_target(shaders_${_game} DEPENDS ${_published})
-    add_dependencies(shaders_${_game} ${_target} revision_shader_bytecode)
+    add_custom_target(shader_bytecode_${_game} DEPENDS ${_published})
+    add_custom_target(shaders_${_game})
+    add_dependencies(shaders_${_game} game_shader_dx9_${_game} shader_bytecode_${_game})
     if(NOT TARGET shaders)
         add_custom_target(shaders)
     endif()

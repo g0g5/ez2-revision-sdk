@@ -4,9 +4,15 @@
 //
 //=============================================================================//
 
+#ifdef REVISION_LUX
+#include "lux_compat.h"
+#else
 #include "BaseVSShader.h"
+#endif
 #include "SDK_unlittwotexture_vs20.inc"
+#ifndef REVISION_LUX
 #include "SDK_monitorscreen_ps20.inc"
+#endif
 #include "SDK_monitorscreen_ps20b.inc"
 #include "cpp_shader_constant_register_map.h"
 
@@ -51,7 +57,11 @@ BEGIN_VS_SHADER( SDK_MonitorScreen_DX9,
 
 	SHADER_FALLBACK
 	{
-		if( params && !params[BASETEXTURE]->IsDefined() )
+#ifdef REVISION_LUX
+		if ( !IsDefined( BASETEXTURE ) )
+#else
+		if ( params && !params[BASETEXTURE]->IsDefined() )
+#endif
 			return "SDK_LightmappedGeneric";
 
 		return 0;
@@ -118,18 +128,22 @@ BEGIN_VS_SHADER( SDK_MonitorScreen_DX9,
 			DECLARE_STATIC_VERTEX_SHADER( sdk_unlittwotexture_vs20 );
 			SET_STATIC_VERTEX_SHADER( sdk_unlittwotexture_vs20 );
 
+#ifndef REVISION_LUX
 			if( g_pHardwareConfig->SupportsPixelShaders_2_b() )
+#endif
 			{
 				DECLARE_STATIC_PIXEL_SHADER( sdk_monitorscreen_ps20b );
 				SET_STATIC_PIXEL_SHADER_COMBO( TEXTURE2, (bHasTexture2)?(1):(0) );
 				SET_STATIC_PIXEL_SHADER( sdk_monitorscreen_ps20b );
 			}
+#ifndef REVISION_LUX
 			else
 			{
 				DECLARE_STATIC_PIXEL_SHADER( sdk_monitorscreen_ps20 );
 				SET_STATIC_PIXEL_SHADER_COMBO( TEXTURE2, (bHasTexture2)?(1):(0) );
 				SET_STATIC_PIXEL_SHADER( sdk_monitorscreen_ps20 );
 			}
+#endif
 
 			DefaultFog();
 
@@ -163,19 +177,23 @@ BEGIN_VS_SHADER( SDK_MonitorScreen_DX9,
 			SET_DYNAMIC_VERTEX_SHADER_COMBO( COMPRESSED_VERTS, (int)vertexCompression );
 			SET_DYNAMIC_VERTEX_SHADER( sdk_unlittwotexture_vs20 );
 
+#ifndef REVISION_LUX
 			if( g_pHardwareConfig->SupportsPixelShaders_2_b() )
+#endif
 			{
 				DECLARE_DYNAMIC_PIXEL_SHADER( sdk_monitorscreen_ps20b );
 				SET_DYNAMIC_PIXEL_SHADER_COMBO( PIXELFOGTYPE, pShaderAPI->GetPixelFogCombo() );
 				SET_DYNAMIC_PIXEL_SHADER_COMBO( WRITE_DEPTH_TO_DESTALPHA, bFullyOpaque && pShaderAPI->ShouldWriteDepthToDestAlpha() );
 				SET_DYNAMIC_PIXEL_SHADER( sdk_monitorscreen_ps20b );
 			}
+#ifndef REVISION_LUX
 			else
 			{
 				DECLARE_DYNAMIC_PIXEL_SHADER( sdk_monitorscreen_ps20 );
 				SET_DYNAMIC_PIXEL_SHADER_COMBO( PIXELFOGTYPE, pShaderAPI->GetPixelFogCombo() );
 				SET_DYNAMIC_PIXEL_SHADER( sdk_monitorscreen_ps20 );
 			}
+#endif
 		}
 		Draw();
 	}

@@ -1,0 +1,11 @@
+// Mapbase shaders built against LUX's shaderlib.
+SDK_depthwrite_ps2x.fxc
+SDK_depthwrite_vs20.fxc
+sdk_eyeglint_ps2x.fxc
+sdk_eyeglint_vs20.fxc
+SDK_lightmappedgeneric_vs20.fxc
+SDK_monitorscreen_ps2x.fxc
+SDK_unlittwotexture_vs20.fxc
+SDK_windowimposter_ps2x.fxc
+SDK_windowimposter_vs20.fxc
+SDK_worldtwotextureblend_ps2x.fxc

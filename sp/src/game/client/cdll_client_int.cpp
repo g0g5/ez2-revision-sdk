@@ -177,6 +177,10 @@ extern vgui::IInputInternal *g_InputInternal;
 #include "../gamepadui/igamepadui.h"
 #endif // GAMEPADUI
 
+#ifdef EZ2
+#include "ez2/lux_shader_caps.h"
+#endif
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -1102,6 +1106,10 @@ int CHLClient::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn physi
 	IGameSystem::Add( ClientSoundscapeSystem() );
 	IGameSystem::Add( PerfVisualBenchmark() );
 	IGameSystem::Add( MumbleSystem() );
+
+#ifdef EZ2
+	ApplyLuxShaderCaps( materials );
+#endif
 	
 	#if defined( TF_CLIENT_DLL )
 	IGameSystem::Add( CustomTextureToolCacheGameSystem() );

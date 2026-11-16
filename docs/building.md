@@ -102,16 +102,43 @@ combinations. Other libraries and tools have their own target inventories.
 
 ## SHADERS (OPTIONAL)
 
-Install Source SDK Base 2013 Singleplayer (Steam App ID 243730) and Python 3.11
-or later. The shader build uses Valve's shadercompile.exe and the matching DLLs
-in the installed SDK's bin directory. The generator uses the Python standard
-library. Run this command to build EZ2 shaders.
+Shader builds require Python 3.11 or later. Build the EZ2 LUX shaders with the
+same CMake and Ninja entry point as the game DLLs.
 
 ```powershell
 ./build.ps1 -Game EZ2 -Group shaders
 ```
 
-The shaders and everything groups resolve the compiler in this order.
+### EZ2 with LUX
+
+CMake downloads the x64 `ShaderCompile2.exe` from the pinned [LUX revision](https://github.com/LUX-Shaders-Team/LUX-Shaders/tree/c71803c9ff132003da991a6e3b12b6c8c5adafdc),
+verifies its SHA-256 and caches it under `build/shader-tools/`. The compiler uses
+`D3DCompiler_47.dll`. An offline build can use an existing compiler by passing
+`-CMakeArguments '-DREVISION_SHADERCOMPILE2_EXECUTABLE=D:/tools/ShaderCompile2.exe'`.
+The EZ2 shader build can run on a build system without a Steam SDK installation.
+
+The sources under `sp/src/materialsystem/lux/` build against the SDK 2013 SP
+interfaces. `ShaderList_All.txt`, `ShaderList_Custom.txt` and
+`ShaderList_PostProcess_vs20.txt` drive the LUX bytecode. The adjacent legacy
+shader tree contains `lux_compat_*.txt` for the Mapbase compatibility passes.
+They build DepthWrite, EyeGlint, MonitorScreen, WindowImposter and
+WorldTwoTextureBlend against LUX's shaderlib. `SDK_Eyeball` still resolves to
+`Wireframe`. The other legacy names map to their LUX implementations.
+
+The EZ2 client DLL includes the [SDK2013CE SM3 caps fix](https://github.com/Nbc66/source-sdk-2013-ce/commit/e458d3007b142dffa6d11458f379d2d8551457fb).
+Use the client and shader DLLs from the same build. The private caps write and
+the stock-name registration override target the Win32 retail SDK 2013 SP
+`shaderapidx9.dll` (PE timestamp `0x5429D743`) and `materialsystem.dll`
+(`0x5429D70F`), respectively. The loader checks the expected binary layouts.
+On an unknown material-system build it registers only `LUX_*` and `SDK_*`.
+An unknown shader API that reports fewer than 224 pixel constants may still
+need a compatibility update for the shaders that use `c32` and above.
+
+### HL2, Episodic and EZ1
+
+These targets use Valve's `shadercompile.exe` and the matching DLLs from Source
+SDK Base 2013 Singleplayer (Steam App ID 243730). The `shaders` and `everything`
+groups resolve the legacy compiler in this order.
 
 1. Use the absolute executable path supplied through the CMake cache variable
    REVISION_SHADERCOMPILE_EXECUTABLE.
@@ -127,15 +154,13 @@ For an SDK in D:/SteamLibrary, .shader.env.local looks like this.
 REVISION_SHADER_SDK_BIN=D:/SteamLibrary/steamapps/common/Source SDK Base 2013 Singleplayer/bin
 ```
 
-Set the interpreter with -DPython3_EXECUTABLE=<absolute path> in
--CMakeArguments when needed. To clear a compiler path saved by an older build,
-pass '-UREVISION_SHADERCOMPILE_EXECUTABLE' once in -CMakeArguments. Python and
-the SDK compiler are required only when configuring shaders or everything.
+To clear a compiler path saved by an older build, pass
+`'-UREVISION_SHADERCOMPILE_EXECUTABLE'` once in `-CMakeArguments`. The
+`stdshader_dx9_*.txt` files are the legacy bytecode input lists.
 
-Shader DLLs go to the selected mod's bin directory and shader bytecode to its
-shaders/fxc directory. Shader intermediates remain in the build tree. The
-stdshader_dx9_*.txt files are checked-in inputs; update them when adding or
-removing shader combinations.
+Both build paths accept `-DPython3_EXECUTABLE=<absolute path>` in
+`-CMakeArguments`. Shader DLLs go to the mod's `bin/` directory and bytecode to
+its `shaders/fxc/` directory. Shader intermediates remain in the build tree.
 
 ## VALIDATION
 
