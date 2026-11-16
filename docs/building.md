@@ -60,7 +60,7 @@ changes are limited to the current process and restored when the script exits.
 - REVISION_USE_PCH: game DLL precompiled headers, default ON.
 - REVISION_BUILD_EXPANDED_STEAM: rebuild Expanded Steam from source, default OFF.
 - REVISION_STEAMWORKS_VERSION: integer Steamworks header version, default 1261.
-  See README_EXPANDED_STEAM.md before changing Steamworks headers or libraries.
+  See [Expanded Steam](expanded-steam.md) before changing Steamworks headers or libraries.
 - REVISION_DOWNLOAD_SDK_LIBRARIES: download missing Windows x86 SDK libraries,
   default ON.
 - REVISION_SDK_LIBRARY_CACHE: cache shared by build trees in this checkout.

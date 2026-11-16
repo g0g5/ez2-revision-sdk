@@ -116,7 +116,12 @@ bool ClientModeHLNormal::DoPostScreenSpaceEffects( const CViewSetup *pSetup )
 		if ( pEZ2Player->IsNVGActive() )
 		{
 			IMaterial *pOverlayMaterial = materials->FindMaterial( "Ezero/Mask_NvMap", TEXTURE_GROUP_OTHER, true );
+			CMatRenderContextPtr pRenderContext( materials );
+			// Refract shaders can write depth even on translucent materials. This
+			// screen-space overlay must not occlude the viewmodels drawn next.
+			pRenderContext->OverrideDepthEnable( true, false );
 			DrawScreenEffectMaterial( pOverlayMaterial, 0, 0, pSetup->width, pSetup->height );
+			pRenderContext->OverrideDepthEnable( false, true );
 		}
 	}
 

@@ -11,7 +11,7 @@ Currently, directly upgrading the Steam API requires replacing `steam_api.dll` i
 
 This project comes with an optional hack which uses DLL redirection to force the client/server DLLs to integrate a `steam_api.dll` adjacent to them in the mod's own `bin` folder rather than the engine's `bin` folder. However, this sometimes conflicts with the Steam API implemented by the rest of the engine and modules like Steam Input may not work correctly. There's also not an equivalent solution for native Linux.
 
-The instructions below assume a standalone Steam app on Windows. Build from the repository root with PowerShell 7 and `./build.ps1`; see [docs/building.md](docs/building.md) for the Windows x86 toolchain requirements. The default build is EZ2 Release. `REVISION_BUILD_EXPANDED_STEAM` defaults to `OFF` (use the vendored library rather than rebuilding it), and `REVISION_STEAMWORKS_VERSION` defaults to `1261`.
+The instructions below assume a standalone Steam app on Windows. Build from the repository root with PowerShell 7 and `./build.ps1`; see [the build guide](building.md) for the Windows x86 toolchain requirements. The default build is EZ2 Release. `REVISION_BUILD_EXPANDED_STEAM` defaults to `OFF` (use the vendored library rather than rebuilding it), and `REVISION_STEAMWORKS_VERSION` defaults to `1261`.
 
 ---
 
@@ -85,7 +85,7 @@ Updated Steamworks headers may be subject to the Steamworks SDK Access Agreement
 
 The root CMake cache controls the integration:
 
-- `REVISION_BUILD_EXPANDED_STEAM=OFF` (default) links the prebuilt `expanded_steam.lib` into the game client. CMake uses a local library at `sp/src/lib/public/expanded_steam.lib` if supplied. For the default Steamworks version it can also retrieve the pinned library described in the [build guide](docs/building.md#windows-x86-sdk-libraries). Set the option to `ON` to build Expanded Steam from source with matching Steamworks headers.
+- `REVISION_BUILD_EXPANDED_STEAM=OFF` (default) links the prebuilt `expanded_steam.lib` into the game client. CMake uses a local library at `sp/src/lib/public/expanded_steam.lib` if supplied. For the default Steamworks version it can also retrieve the pinned library described in the [build guide](building.md#windows-x86-sdk-libraries). Set the option to `ON` to build Expanded Steam from source with matching Steamworks headers.
 - `REVISION_STEAMWORKS_VERSION=1261` (default) is the integer header-version selector used by the source. Set it to the version expected by the headers you provide; changing this number does not download or update any SDK files.
 
 Run in PowerShell 7 from the repository root, after preparing the matching SDK files:
