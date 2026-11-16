@@ -67,7 +67,7 @@ Run from the repository root with PowerShell 7. `build.ps1` finds VS and its bun
 ```
 
 - After each batch of C/C++ edits, pass the changed sources and headers to `check.ps1`. It incrementally compiles MSVC x86 objects for each source variant and uses Ninja's recorded includes to check one translation unit per known target for each header. In a fresh build tree, include a source that uses the header.
-- Build the affected DLL target to check linking. Run the mod under `steamapps/sourcemods` to validate gameplay. There is no unit-test or packaging target.
+- Build the affected DLL target to check linking. The agent focuses solely on code correctness and whether the code compiles. In-game behavior is outside the agent's testing scope and is validated by a human, who provides feedback. There is no unit-test or packaging target.
 - Add sources to `cmake/targets/*.cmake`; shared client/server sources belong in the corresponding `*_common.cmake`. Build artifacts and caches live under `build/`, game DLLs/PDBs under `sp/game/mod_<game>/bin`, tools under `sp/game/bin`.
 - Keep x86: the engine ABI and vendored libraries are 32-bit. Static SDK libraries are rebuilt in the build tree, not over the vendored `.lib` files.
 - `phonemeextractor` and `qc_eyes` require obsolete toolsets/MFC and are not build targets. GamepadUI implementation is external; this repository builds only its existing game hooks.
