@@ -69,6 +69,9 @@ vshtmp9_tmp/
 # Backup files
 *.bak
 
+# Local EZ2 build and deployment
+/local_ez2_build.ps1
+
 # CMake build trees and editor metadata
 /build/
 /CMakeUserPresets.json

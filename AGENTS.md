@@ -63,6 +63,7 @@ Run from the repository root with PowerShell 7. `build.ps1` finds VS and its bun
 ./build.ps1 -Game All                            # HL2, Episodic, EZ1, EZ2
 ./build.ps1 -Group tools                         # Map tools and asset tools
 ./build.ps1 -Target client_ez2                   # One DLL and its dependencies
+./local_ez2_build.ps1                            # If present, build and deploy the four EZ2 DLLs
 ```
 
 - After each batch of C/C++ edits, pass the changed sources and headers to `check.ps1`. It incrementally compiles MSVC x86 objects for each source variant and uses Ninja's recorded includes to check one translation unit per known target for each header. In a fresh build tree, include a source that uses the header.
