@@ -1,45 +1,52 @@
 ## Overview
-Revision SDK is the Source SDK 2013 Singleplayer branch behind the Entropy: Zero (EZ1/EZ2) mods, carrying Mapbase v8.0 features plus the Expanded Steam integration; work here means writing C++ game code and shaders that compile into `client.dll` / `server.dll`.
+Revision SDK builds the C++ game DLLs, DirectX 9 shaders, and map tools for Entropy: Zero on Source SDK 2013 Singleplayer, with Mapbase v8.0, Expanded Steam, and LUX shaders for EZ2.
 
 ## Tech Stack
 
-- Language: C++ (Source Engine 2013 style, pre-C++11 idiom), HLSL and Valve `SDK_` shaders, PowerShell and Python build helpers
+- Language: C++ (Source Engine 2013 style, pre-C++11 idiom) and HLSL, with build helpers in PowerShell and Python
 - Runtime / Framework: Source Engine 2013 singleplayer (`client.dll`, `server.dll`, VGUI2, VScript/Squirrel)
-- Key Dependencies: Steamworks SDK (`sp/src/lib/public/steam_api.lib`, prebuilt), vendored protobuf 2.3.0, vendored Squirrel, Discord RPC
-- Package Manager: none; native CMake + Ninja, Windows MSVC x86 (VS 2022/2026 Desktop C++ and CMake tools), PowerShell 7
+- Key Dependencies: Windows x86 SDK libraries, Steamworks, vendored protobuf 2.3.0 and Squirrel, and source-built Discord RPC v3.4.0 with vendored RapidJSON
+- Package Manager: none. Build with PowerShell 7, CMake, Ninja, and MSVC x86 from Visual Studio 2022 or 2026 with Desktop development with C++ and CMake tools.
 
 ## Structural Map
 
 ```
 revision-sdk/
-|- LICENSE                        # Valve SOURCE 1 SDK License; free distribution only, ship it with thirdpartylegalnotices.txt
+|- LICENSE                        # Valve SOURCE 1 SDK License
 |- README.md                      # Short project overview, minimal build guide, links to docs/
 |- docs/                          # Build, Entropy Zero, Mapbase, LUX, and Expanded Steam documentation
 |- CMakeLists.txt                 # Game selection and build groups
 |- build.ps1                      # Discovers VS, initializes x86 tools, configures and builds with Ninja
-|- cmake/                         # SourceSDK.cmake compiler/link settings; Shaders.cmake shader pipeline
-|  \- targets/                    # Explicit source inventories; client/server_common.cmake shared sources
-|- .github/workflows/             # Windows CMake game/tool builds
+|- check.ps1                      # Incremental object compilation for changed C/C++ files
+|- scripts/                       # Shared PowerShell build driver and object target discovery
+|- cmake/                         # SDK target setup, library resolution, and runtime publishing
+|  |- Shaders.cmake               # Legacy shader pipeline and dispatch to LUX
+|  |- LuxShaders.cmake            # EZ2 LUX shader DLL and bytecode build
+|  \- targets/                    # Explicit source inventories for game DLLs, libraries, and tools
 \- sp/                            # The only engine branch in this repo (singleplayer)
    |- game/                       # Runtime content and build output root, one directory per game target
    |  |- mod_ez1/                 # EZ1 install unit: gameinfo.txt, cfg/, resource/, scripts/, bin/ (build output)
    |  |- mod_hl2/                 # Mapbase content target: maps/, materials/, scripts/, shaders/
    |  |- mod_episodic/            # Episodic content target
-   |  |- mod_ez2/                 # EZ2 DLL/PDB output only; gameinfo and content are not committed
+   |  |- mod_ez2/                 # Published EZ2 binaries and shader bytecode, with runtime content supplied separately
    |  \- ep2/ episodic/ hl2/ lostcoast/   # Stock HL2 content targets
    \- src/                        # All engine, game and tool source code
       |- devtools/bin/            # DirectX runtime used by the shader compiler
       |- public/                  # Shared SDK headers and implementations: entities, networking, BSP, math
-      |- tier0/ tier1/ vstdlib/ common/ mathlib/ raytrace/   # Engine support libraries shared by everything
+      |- tier1/ common/ mathlib/ raytrace/   # Shared engine support code
       |- game/
       |  |- client/               # Client-side: c_* entities, HUD, CInput, render proxies, effects
-      |  |  |- hl2/ episodic/ hl2mp/ mod/     # Game-specific client code
+      |  |  |- hl2/ episodic/ hl2mp/          # Game-specific client code
       |  |  \- mapbase/ ez2/ ezu/ Human_Error/ game_controls/   # Mod-specific client code
       |  |- server/               # Authoritative simulation: AI, NPCs, physics, entities, navigation
-      |  |  \- hl2/ episodic/ hl2mp/ mod/     # Server code, plus mod-specific mapbase/ ez1/ ez2/ Human_Error/
+      |  |  |- hl2/ episodic/ hl2mp/ mod/   # Game-specific server code
+      |  |  \- mapbase/ ez1/ ez2/ Human_Error/   # Mod-specific server code
       |  |- shared/               # Code compiled into both client and server, including hl2/ episodic/ hl2mp/ econ/ mapbase/ ez2/
       |  \- gamepadui/            # Only igamepadui.h; the implementation comes from entropy-zero/HL2-GamepadUI
-      |- materialsystem/          # stdshaders/ (SDK_ shader sources) and shaderapidx9/
+      |- materialsystem/
+      |  |- lux/                  # EZ2 LUX shader library and shader sources
+      |  |- stdshaders/           # Legacy SDK_ shaders and Mapbase compatibility passes for LUX
+      |  \- shaderapidx9/         # DirectX 9 shader API code
       |- vgui2/                   # VGUI2 UI framework: src/, vgui_controls/, include/, chromehtml/
       |- vscript/                 # VScript bindings plus vendored squirrel/ (ships its own CMake/Makefile, unrelated to the game build)
       |- responserules/runtime/   # New Response System runtime library
@@ -47,37 +54,38 @@ revision-sdk/
       |- fgdlib/                  # FGD parsing library used by editor and map tools
       |- utils/                   # Map and asset toolchain: vbsp/ vvis/ vrad(+launcher)/ vmpi/ glview/ vtf2tga/ captioncompiler/ vice/ ...
       |- thirdparty/protobuf-2.3.0/   # Vendored protobuf for networking and GC protocols
-      |- lib/public/              # Prebuilt import libraries: steam_api.lib, expanded_steam.lib, discord-rpc.lib, libz, libprotobuf
+      |- lib/public/ lib/common/  # Locations for locally supplied prebuilt x86 SDK libraries
       |- gcsdk/                   # protoc.exe and Steam GC support
       \- dx9sdk/ dx10sdk/         # D3D SDK shader helper utilities
 ```
 
 ## Commands
 
-Run from the repository root with PowerShell 7. `build.ps1` finds VS and its bundled CMake/Ninja automatically.
-
 ```powershell
+# Run from the repository root in PowerShell 7. After each batch of C/C++ edits, check the changed sources and headers.
 ./check.ps1 -Game EZ2 -Files sp/src/game/server/ai_basenpc_movement.cpp,sp/src/game/server/ai_basenpc.h
-./build.ps1                                      # EZ2 Release, incremental
-./build.ps1 -Configuration Debug
-./build.ps1 -Game All                            # HL2, Episodic, EZ1, EZ2
-./build.ps1 -Group tools                         # Map tools and asset tools
-./build.ps1 -Target client_ez2                   # One DLL and its dependencies
-./local_ez2_build.ps1                            # If present, build and deploy the four EZ2 DLLs
+
+# Link the affected DLL. The default builds both EZ2 DLLs in Release, and -Game All builds HL2, Episodic, EZ1, and EZ2.
+./build.ps1 -Game EZ2 -Target server_ez2
+./build.ps1
+./build.ps1 -Game All
+
+# Build the map and asset tools.
+./build.ps1 -Group tools
+
+# Build the EZ2 LUX shader DLL and bytecode.
+./build.ps1 -Game EZ2 -Group shaders
+
+# If the local helper is present, use it to build and deploy the four EZ2 DLLs to an installed mod.
+./local_ez2_build.ps1
 ```
 
-- After each batch of C/C++ edits, pass the changed sources and headers to `check.ps1`. It incrementally compiles MSVC x86 objects for each source variant and uses Ninja's recorded includes to check one translation unit per known target for each header. In a fresh build tree, include a source that uses the header.
-- Build the affected DLL target to check linking. The agent focuses solely on code correctness and whether the code compiles. In-game behavior is outside the agent's testing scope and is validated by a human, who provides feedback. There is no unit-test or packaging target.
-- Add sources to `cmake/targets/*.cmake`; shared client/server sources belong in the corresponding `*_common.cmake`. Build artifacts and caches live under `build/`, game DLLs/PDBs under `sp/game/mod_<game>/bin`, tools under `sp/game/bin`.
-- Keep x86: the engine ABI and vendored libraries are 32-bit. Static SDK libraries are rebuilt in the build tree, not over the vendored `.lib` files.
-- `phonemeextractor` and `qc_eyes` require obsolete toolsets/MFC and are not build targets. GamepadUI implementation is external; this repository builds only its existing game hooks.
-- `REVISION_BUILD_EXPANDED_STEAM` defaults to `OFF`; rebuilding needs matching updated Steamworks headers, `REVISION_STEAMWORKS_VERSION`, and the engine-side `bin/steam_api.dll`. See `docs/expanded-steam.md`.
-- `-Group shaders` / `everything` needs Python 3.11+ and Valve `shadercompile.exe` with its runtime DLLs from Source SDK Base 2013 Singleplayer. See `docs/building.md` for automatic discovery and manual overrides.
-- Mod-specific code is isolated by preprocessor macros (`EZ`, `EZ1`, `EZ2`, `MAPBASE`); keep stock `hl2/` and `episodic/` paths intact when touching shared files.
-- This is a derivative of Source SDK 2013 / Mapbase v8.0. `LICENSE` allows free redistribution only and requires shipping `thirdpartylegalnotices.txt`; do not introduce GPL-like copyleft code.
-
 ## Workflows
-[No content yet.]
+
+- [build-and-check-game-code.md](.agents/workflows/build-and-check-game-code.md) - Build and check game code.
+- [build-shaders.md](.agents/workflows/build-shaders.md) - Build shaders.
+- [deploy-game-binaries.md](.agents/workflows/deploy-game-binaries.md) - Deploy and distribute game binaries.
 
 ## Notes
+
 [No content yet.]
