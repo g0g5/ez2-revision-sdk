@@ -20,7 +20,6 @@ set(revision_prebuilt_libz           public e47a62eaea2ce54855c1f09dd22477e70b1c
 set(revision_prebuilt_matsys_controls public 135b3b1322334513ced15a62b1774f612beb5b5a24ba027b061a4b71ecc0b1ec)
 set(revision_prebuilt_nvtristrip     public 995115d7f110d8413527efa51f3278db5e21447aab80a53408f32ace11ad4e3b)
 set(revision_prebuilt_particles      public 42e43e18700bb53bc0596f399607f78a8b9167a2aef5f1e9be0027dc6f1afb9d)
-set(revision_prebuilt_shaderlib      public 5be1f5e16c3ce53501d8b9fea76d41160b1c340b295f746ee11c7cbd96ef6102)
 set(revision_prebuilt_steam_api      public e2c2eedfef904fd5a2e0f59705715ead65e4b0a7b55b7ef30918efa406251331)
 set(revision_prebuilt_tier0          public b33545f42a5c2eecbc4cccd4bc6b406856bac6f266585f0face45fa2a72b238c)
 set(revision_prebuilt_tier2          public d94271a93ff60ac2c5063758edeaf346d1451221740fb17095cc6f432043373d)

@@ -52,10 +52,11 @@ function(revision_add_lux_shaders)
     set(_compat_dir "${REVISION_SRC}/materialsystem/stdshaders")
     set(_game_dir "${REVISION_ROOT}/sp/game/mod_ez2")
     set(_prep "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/ShaderPrep.py")
-    set(_runner "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/RunShaderBuild.cmake")
+    set(_runner "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/RunLuxShaderBuild.cmake")
     set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_prep}")
     file(GLOB _includes_hlsl CONFIGURE_DEPENDS "${_shader_dir}/*.h" "${_compat_dir}/*.h")
     list(FILTER _includes_hlsl EXCLUDE REGEX "/(BaseVSShader|lux_compat|cpp_[^/]+)\\.h$")
+    # LUX's shader DLL also registers the SDK shaders that LUX does not implement.
     set(_lists_30 "${_shader_dir}/ShaderList_All.txt" "${_shader_dir}/ShaderList_Custom.txt"
         "${_compat_dir}/lux_compat_30.txt")
     set(_lists_20b "${_shader_dir}/ShaderList_PostProcess_vs20.txt" "${_compat_dir}/lux_compat_20b.txt")
@@ -112,7 +113,7 @@ function(revision_add_lux_shaders)
         list(TRANSFORM _outputs PREPEND "${_work}/")
         add_custom_command(OUTPUT ${_outputs}
             COMMAND "${CMAKE_COMMAND}" "-DMANIFEST=${_manifest}" "-DWORK_DIR=${_work}"
-                -DMODE=LUX -P "${_runner}"
+                -P "${_runner}"
             DEPENDS ${_inputs} ${_lists} "${_prep}" "${_runner}" "${_manifest}" "${_compiler}"
             COMMENT "Compile LUX shader bytecode and combo headers (${_model})"
             VERBATIM)
@@ -122,6 +123,19 @@ function(revision_add_lux_shaders)
     revision_add_runtime_target(game_shader_dx9_ez2 SHARED "${_game_dir}/bin" OUTPUT_NAME game_shader_dx9)
     target_include_directories(game_shader_dx9_ez2_binary BEFORE PRIVATE ${_includes})
     add_dependencies(game_shader_dx9_ez2_binary revision_lux_bytecode)
-    revision_publish_shaders(ez2 "${_game_dir}" ${_bytecode})
+    set(_published)
+    foreach(_file IN LISTS _bytecode)
+        get_filename_component(_name "${_file}" NAME)
+        set(_output "${_game_dir}/shaders/fxc/${_name}")
+        add_custom_command(OUTPUT "${_output}"
+            COMMAND "${CMAKE_COMMAND}" -E make_directory "${_game_dir}/shaders/fxc"
+            COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${_file}" "${_output}"
+            DEPENDS "${_file}" game_shader_dx9_ez2_binary
+            VERBATIM)
+        list(APPEND _published "${_output}")
+    endforeach()
+    add_custom_target(shader_bytecode_ez2 DEPENDS ${_published})
     add_dependencies(game_shader_dx9_ez2 shader_bytecode_ez2)
+    add_custom_target(shaders_ez2 DEPENDS game_shader_dx9_ez2)
+    add_custom_target(shaders DEPENDS shaders_ez2)
 endfunction()

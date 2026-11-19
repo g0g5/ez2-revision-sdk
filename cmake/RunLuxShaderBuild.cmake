@@ -1,0 +1,40 @@
+cmake_minimum_required(VERSION 3.24)
+
+if(NOT DEFINED MANIFEST OR NOT DEFINED WORK_DIR)
+    message(FATAL_ERROR "RunLuxShaderBuild needs MANIFEST and WORK_DIR.")
+endif()
+include("${MANIFEST}")
+if(NOT IS_ABSOLUTE "${WORK_DIR}")
+    message(FATAL_ERROR "Shader work directory must be an absolute build-tree path.")
+endif()
+get_filename_component(_base "${MANIFEST}" DIRECTORY)
+file(REAL_PATH "${_base}" _base)
+file(REAL_PATH "${WORK_DIR}" _resolved_work)
+cmake_path(IS_PREFIX _base "${_resolved_work}" NORMALIZE _inside_base)
+if(NOT _inside_base OR _resolved_work STREQUAL _base)
+    message(FATAL_ERROR "Shader work directory must be inside ${_base}.")
+endif()
+
+# The compiler writes both combo indices and bytecode under -shaderpath.
+# Use a fresh staging directory so a partial compiler run cannot pass by
+# leaving behind old outputs. CMake verifies both files for each shader.
+file(REMOVE_RECURSE "${WORK_DIR}")
+file(MAKE_DIRECTORY "${WORK_DIR}")
+file(COPY ${_inputs} DESTINATION "${WORK_DIR}")
+execute_process(COMMAND "${_compiler}" -fastfail -ver "${_model}"
+    -shaderpath "${WORK_DIR}" ${_sources}
+    WORKING_DIRECTORY "${WORK_DIR}" RESULT_VARIABLE _result)
+if(NOT _result STREQUAL "0")
+    file(REMOVE_RECURSE "${WORK_DIR}")
+    message(FATAL_ERROR "ShaderCompile2 failed (${_result}); see its diagnostics above.")
+endif()
+foreach(_output IN LISTS _outputs)
+    set(_size 0)
+    if(EXISTS "${WORK_DIR}/${_output}")
+        file(SIZE "${WORK_DIR}/${_output}" _size)
+    endif()
+    if(_size EQUAL 0)
+        file(REMOVE_RECURSE "${WORK_DIR}")
+        message(FATAL_ERROR "ShaderCompile2 did not produce ${_output}.")
+    endif()
+endforeach()
