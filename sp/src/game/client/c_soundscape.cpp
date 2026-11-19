@@ -56,6 +56,9 @@ struct randomsound_t
 	bool		isAmbient;
 	bool		isRandom;
 	KeyValues	*pWaves;
+#ifdef MAPBASE
+	KeyValues	*pSubtitles;
+#endif
 
 	void Init()
 	{
@@ -964,6 +967,13 @@ void C_SoundscapeSystem::ProcessPlayRandom( KeyValues *pPlayRandom, const subsou
 		{
 			sound.time = ReadInterval( pKey->GetString() );
 		}
+#ifdef MAPBASE
+		// Match subtitles to rndwave entries by position, as in Cvoxalury's soundscape subtitles.
+		else if ( !Q_strcasecmp( pKey->GetName(), "subtitles" ) )
+		{
+			sound.pSubtitles = pKey->GetFirstSubKey();
+		}
+#endif
 		else if ( !Q_strcasecmp( pKey->GetName(), "rndwave" ) )
 		{
 			KeyValues *pWaves = pKey->GetFirstSubKey();
@@ -1271,9 +1281,16 @@ void C_SoundscapeSystem::PlayRandomSound( randomsound_t &sound )
 
 	int waveId = random->RandomInt( 0, sound.waveCount-1 );
 	KeyValues *pWaves = sound.pWaves;
+#ifdef MAPBASE
+	KeyValues *pSubtitle = sound.pSubtitles;
+#endif
 	while ( waveId > 0 && pWaves )
 	{
 		pWaves = pWaves->GetNextKey();
+#ifdef MAPBASE
+		if ( pSubtitle )
+			pSubtitle = pSubtitle->GetNextKey();
+#endif
 		waveId--;
 	}
 	if ( !pWaves )
@@ -1306,6 +1323,32 @@ void C_SoundscapeSystem::PlayRandomSound( randomsound_t &sound )
 
 		C_BaseEntity::EmitSound( filter, SOUND_FROM_WORLD, ep );
 	}
+
+#ifdef MAPBASE
+	if ( !pSubtitle )
+		return;
+
+	// The entry contains a caption token and an optional duration in seconds.
+	const char *pToken = pSubtitle->GetString();
+	while ( V_isspace( *pToken ) )
+		++pToken;
+
+	const char *pDuration = pToken;
+	while ( *pDuration && !V_isspace( *pDuration ) )
+		++pDuration;
+
+	char token[128];
+	int tokenLength = pDuration - pToken;
+	if ( tokenLength == 0 || tokenLength >= sizeof( token ) )
+		return;
+
+	Q_strncpy( token, pToken, tokenLength + 1 );
+	if ( !Q_stricmp( token, "none" ) )
+		return;
+
+	float duration = strtof( pDuration, NULL );
+	clientdll->EmitCloseCaption( token, IsFinite( duration ) && duration > 0.0f ? duration : 1.0f );
+#endif
 }
 
 // walk the list of random sound commands and update
