@@ -24,11 +24,12 @@ function(revision_target_defaults target)
         "${REVISION_SRC}/public/tier0" "${REVISION_SRC}/public/tier1")
     target_compile_definitions(${target} PRIVATE
         $<$<CONFIG:Debug>:_DEBUG;DEBUG;_HAS_ITERATOR_DEBUGGING=0>
-        $<$<CONFIG:Release>:NDEBUG>)
+        $<$<CONFIG:Release,Publish>:NDEBUG>)
     target_compile_options(${target} PRIVATE
-        "$<$<COMPILE_LANGUAGE:C,CXX>:/W4;/Z7;/GF;/Gy;/fp:fast;/arch:SSE2;/Zc:forScope;/Zc:threadSafeInit-;/wd4316;/wd4838;/wd4456;/wd4457;/wd4458;/wd4459>"
+        "$<$<COMPILE_LANGUAGE:C,CXX>:/W4;/GF;/Gy;/fp:fast;/arch:SSE2;/Zc:forScope;/Zc:threadSafeInit-;/wd4316;/wd4838;/wd4456;/wd4457;/wd4458;/wd4459>"
+        "$<$<AND:$<COMPILE_LANGUAGE:C,CXX>,$<NOT:$<CONFIG:Publish>>>:/Z7>"
         "$<$<COMPILE_LANGUAGE:CXX>:/GR>"
-        "$<$<AND:$<COMPILE_LANGUAGE:C,CXX>,$<CONFIG:Release>>:/O2;/Ob2;/Oi;/Ot;/Oy->")
+        "$<$<AND:$<COMPILE_LANGUAGE:C,CXX>,$<CONFIG:Release,Publish>>:/O2;/Ob2;/Oi;/Ot;/Oy->")
     if(REVISION_WARNINGS_AS_ERRORS)
         target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:C,CXX>:/WX>")
     endif()
@@ -39,12 +40,12 @@ function(revision_target_defaults target)
         PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/pdb/${target}")
     get_target_property(type ${target} TYPE)
     if(NOT type STREQUAL "STATIC_LIBRARY")
-        target_link_options(${target} PRIVATE /DEBUG /SAFESEH:NO /INCREMENTAL:NO
+        target_link_options(${target} PRIVATE $<$<NOT:$<CONFIG:Publish>>:/DEBUG> /SAFESEH:NO /INCREMENTAL:NO
             /NODEFAULTLIB:libc /NODEFAULTLIB:libcd
             "$<IF:$<CONFIG:Debug>,/NODEFAULTLIB:libcmt,/NODEFAULTLIB:libcmtd>"
-            "$<$<CONFIG:Release>:/OPT:REF;/OPT:NOICF>")
+            "$<$<CONFIG:Release,Publish>:/OPT:REF;/OPT:NOICF>")
     endif()
-    if(ARGV1 STREQUAL "COPY_PDB")
+    if(ARGV1 STREQUAL "COPY_PDB" AND NOT CMAKE_BUILD_TYPE STREQUAL "Publish")
         add_custom_command(TARGET ${target} POST_BUILD
             COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_PDB_FILE:${target}>" "$<TARGET_FILE_DIR:${target}>"
             VERBATIM)
@@ -105,18 +106,21 @@ function(revision_add_runtime_target name type destination)
         RUNTIME_OUTPUT_DIRECTORY "${staging}"
         PDB_OUTPUT_DIRECTORY "${staging}"
         PDB_NAME "${runtime_OUTPUT_NAME}")
-    # Declare the linker's PDB so Ninja can regenerate it if it is missing.
-    add_custom_command(TARGET ${binary} POST_BUILD
-        BYPRODUCTS "${staging}/${runtime_OUTPUT_NAME}.pdb"
-        COMMAND "${CMAKE_COMMAND}" -E true
-        VERBATIM)
+    if(NOT CMAKE_BUILD_TYPE STREQUAL "Publish")
+        # Declare the linker's PDB so Ninja can regenerate it if it is missing.
+        add_custom_command(TARGET ${binary} POST_BUILD
+            BYPRODUCTS "${staging}/${runtime_OUTPUT_NAME}.pdb"
+            COMMAND "${CMAKE_COMMAND}" -E true
+            VERBATIM)
+    endif()
     # Publish dependencies even when Ninja reuses the linked client. A POST_BUILD
     # copy on the dependency alone would miss other mods and deleted output files.
     set(publish_dependencies)
     foreach(dependency IN LISTS runtime_RUNTIME_DEPENDENCIES)
         list(APPEND publish_dependencies
             COMMAND "${CMAKE_COMMAND}"
-                "-DBINARY=$<TARGET_FILE:${dependency}>" "-DPDB=$<TARGET_PDB_FILE:${dependency}>"
+                "-DBINARY=$<TARGET_FILE:${dependency}>"
+                "-DPDB=$<$<NOT:$<CONFIG:Publish>>:$<TARGET_PDB_FILE:${dependency}>>"
                 "-DDESTINATION=${destination}"
                 "-DLOCK=${REVISION_ROOT}/build/publish-locks/${name}-${dependency}.lock"
                 -P "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/PublishRuntime.cmake")
@@ -125,7 +129,8 @@ function(revision_add_runtime_target name type destination)
     add_custom_target(${name}
         ${publish_dependencies}
         COMMAND "${CMAKE_COMMAND}"
-            "-DBINARY=$<TARGET_FILE:${binary}>" "-DPDB=$<TARGET_PDB_FILE:${binary}>"
+            "-DBINARY=$<TARGET_FILE:${binary}>"
+            "-DPDB=$<$<NOT:$<CONFIG:Publish>>:$<TARGET_PDB_FILE:${binary}>>"
             "-DDESTINATION=${destination}" "-DLOCK=${REVISION_ROOT}/build/publish-locks/${name}.lock"
             -P "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/PublishRuntime.cmake"
         DEPENDS ${binary} ${runtime_RUNTIME_DEPENDENCIES}

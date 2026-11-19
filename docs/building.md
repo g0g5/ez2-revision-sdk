@@ -33,7 +33,9 @@ changes are limited to the current process and restored when the script exits.
   group, for example client_ez2, server_ez2, vbsp or captioncompiler. A game's
   targets are available only when that game is selected by -Game. Shader targets
   require -Group shaders or everything.
-- -Configuration Release|Debug selects the configuration (default Release).
+- `-Configuration Release|Debug|Publish` selects the configuration (default Release).
+  Publish uses Release optimizations and produces no PDBs. The optional
+  `local_ez2_build.ps1` defaults to Publish for its build and deployment.
 - -Jobs N sets parallel build jobs (default: logical processor count).
 - -Clean cleans before building; it does not delete the CMake cache.
 - -ConfigureOnly configures without building or cleaning.
@@ -74,8 +76,8 @@ For example, to pass a game list directly as a CMake cache argument:
 
 Prefer -Game when selecting games so the default build directory matches the
 selection. Keep distinct build trees for different configurations. Game DLLs,
-tools and their linker PDBs are linked into the selected build tree. Each
-requested build publishes the selected binaries and PDBs to `sp/game/bin` for
+tools and, in Debug and Release, their linker PDBs are linked into the selected
+build tree. Each requested build publishes these artifacts to `sp/game/bin` for
 tools or `sp/game/mod_<game>/bin` for game DLLs, even when Ninja can reuse the
 linked files. To install an E:Z mod, copy its complete mod directory, including
 the published bin files and required game content, to Steam/SteamApps/sourcemods.
@@ -89,9 +91,10 @@ headers are vendored in `sp/src/thirdparty/rapidjson/`; neither dependency requi
 a build-time download. Provenance and archive hashes are recorded in each
 `README.revision.md`.
 
-Building a client also builds the matching Windows x86 DLL and publishes it and
-its PDB alongside `client.dll` in `sp/game/mod_<game>/bin/`. Publishing runs even
-when the linker has no work, so rebuilding the client restores a missing runtime
+Building a client also builds the matching Windows x86 DLL and publishes it
+alongside `client.dll` in `sp/game/mod_<game>/bin/`, with its PDB in Debug and
+Release builds. Publishing runs even when the linker has no work, so rebuilding
+the client restores a missing runtime
 DLL. Copy `discord-rpc.dll` with the client when installing a mod; the prebuilt
 `sp/src/lib/public/discord-rpc.lib` is superseded by the source-built import
 library. Distribute `thirdpartylegalnotices-discord-rpc.txt` with these binaries,

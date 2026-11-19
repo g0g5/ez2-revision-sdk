@@ -14,7 +14,7 @@ function(revision_add_discord_rpc)
             $<$<CONFIG:Debug>:_HAS_ITERATOR_DEBUGGING=0>)
     target_compile_options(discord-rpc PRIVATE /EHsc /W3 $<$<CONFIG:Release>:/Z7>)
     target_link_libraries(discord-rpc PRIVATE psapi advapi32)
-    target_link_options(discord-rpc PRIVATE /DEBUG /INCREMENTAL:NO)
+    target_link_options(discord-rpc PRIVATE $<$<NOT:$<CONFIG:Publish>>:/DEBUG> /INCREMENTAL:NO)
     set(staging "${CMAKE_BINARY_DIR}/bin/discord-rpc")
     set_target_properties(discord-rpc PROPERTIES
         CXX_STANDARD 14
@@ -24,10 +24,12 @@ function(revision_add_discord_rpc)
         RUNTIME_OUTPUT_DIRECTORY "${staging}"
         PDB_OUTPUT_DIRECTORY "${staging}"
         PDB_NAME discord-rpc)
-    add_custom_command(TARGET discord-rpc POST_BUILD
-        BYPRODUCTS "${staging}/discord-rpc.pdb"
-        COMMAND "${CMAKE_COMMAND}" -E true
-        VERBATIM)
+    if(NOT CMAKE_BUILD_TYPE STREQUAL "Publish")
+        add_custom_command(TARGET discord-rpc POST_BUILD
+            BYPRODUCTS "${staging}/discord-rpc.pdb"
+            COMMAND "${CMAKE_COMMAND}" -E true
+            VERBATIM)
+    endif()
 endfunction()
 
 revision_add_discord_rpc()

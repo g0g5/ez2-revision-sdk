@@ -20,7 +20,7 @@ param(
     [ValidateSet('EZ2', 'EZ1', 'HL2', 'EPISODIC', 'All')]
     [string[]] $Game,
 
-    [ValidateSet('Debug', 'Release')]
+    [ValidateSet('Debug', 'Release', 'Publish')]
     [string] $Configuration,
 
     [ValidateRange(1, 2147483647)]

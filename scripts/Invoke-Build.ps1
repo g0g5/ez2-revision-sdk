@@ -2,6 +2,7 @@
 [CmdletBinding()]
 param(
     [string[]] $Game = @('EZ2'),
+    [ValidateSet('Debug', 'Release', 'Publish')]
     [string] $Configuration = 'Release',
     [string] $Group = 'game',
     [string[]] $Target,
@@ -127,7 +128,7 @@ try {
     }
 
     # ValidateSet is case-insensitive; canonicalize paths and CMake values.
-    $Configuration = if ($Configuration -ieq 'Debug') { 'Debug' } else { 'Release' }
+    $Configuration = [Globalization.CultureInfo]::InvariantCulture.TextInfo.ToTitleCase($Configuration.ToLowerInvariant())
     if ([string]::IsNullOrWhiteSpace($BuildDirectory)) {
         $BuildDirectory = Join-Path 'build' (Join-Path ($games -join '-') $Configuration)
     }

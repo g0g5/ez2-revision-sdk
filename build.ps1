@@ -12,7 +12,7 @@ the caller's working directory. No cmd.exe or batch scripts are used.
 One or more games: EZ2 (default), EZ1, HL2, EPISODIC, or All. All expands to
 EZ2, EZ1, HL2, EPISODIC. Duplicates are removed while preserving order.
 .PARAMETER Configuration
-Debug or Release (default).
+Debug, Release (default), or Publish (optimized without PDBs).
 .PARAMETER Group
 Build group: game (default), shaders, maptools, tools, or everything.
 .PARAMETER Target
@@ -46,7 +46,7 @@ param(
     [ValidateSet('EZ2', 'EZ1', 'HL2', 'EPISODIC', 'All')]
     [string[]] $Game,
 
-    [ValidateSet('Debug', 'Release')]
+    [ValidateSet('Debug', 'Release', 'Publish')]
     [string] $Configuration,
 
     [ValidateSet('game', 'shaders', 'maptools', 'tools', 'everything')]
